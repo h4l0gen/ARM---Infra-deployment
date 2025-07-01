@@ -75,7 +75,7 @@
       "name": "[parameters('vnetName')]",
       "location": "[parameters('location')]",
       "dependsOn": [
-        "[resourceId('Microsoft.Network/networkSecrelativePathtyGroups', parameters('nsgName'))]"
+        "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('nsgName'))]"
       ],
       "properties": {
         "addressSpace": {
@@ -89,7 +89,7 @@
             "properties": {
               "addressPrefix": "[variables('subnetAddressPrefix')]",
               "networkSecrelativePathtyGroup": {
-                "id": "[resourceId('Microsoft.Network/networkSecrelativePathtyGroups', parameters('nsgName'))]"
+                "id": "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('nsgName'))]"
               }
             }
           }
@@ -108,7 +108,7 @@
     },
     "nsgId": {
       "type": "string",
-      "value": "[resourceId('Microsoft.Network/networkSecrelativePathtyGroups', parameters('nsgName'))]"
+      "value": "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('nsgName'))]"
     }
   }
 }
