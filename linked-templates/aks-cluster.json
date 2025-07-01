@@ -1,0 +1,120 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "clusterName": {
+      "type": "string"
+    },
+    "location": {
+      "type": "string"
+    },
+    "nodeCount": {
+      "type": "int"
+    },
+    "nodeVMSize": {
+      "type": "string"
+    },
+    "kubernetesVersion": {
+      "type": "string"
+    },
+    "servicePrincipalClientId": {
+      "type": "string"
+    },
+    "servicePrincipalClientSecret": {
+      "type": "securestring"
+    },
+    "subnetId": {
+      "type": "string"
+    },
+    "workspaceResourceId": {
+      "type": "string"
+    },
+    "enableContainerInsights": {
+      "type": "bool"
+    }
+  },
+  "variables": {},
+  "resources": [
+    {
+      "type": "Microsoft.ContainerService/managedClusters",
+      "apiVersion": "2023-07-01",
+      "name": "[parameters('clusterName')]",
+      "location": "[parameters('location')]",
+      "identity": {
+        "type": "SystemAssigned"
+      },
+      "properties": {
+        "kubernetesVersion": "[parameters('kubernetesVersion')]",
+        "dnsPrefix": "[parameters('clusterName')]",
+        "enableRBAC": true,
+        "agentPoolProfiles": [
+          {
+            "name": "agentpool",
+            "count": "[parameters('nodeCount')]",
+            "vmSize": "[parameters('nodeVMSize')]",
+            "osType": "Linux",
+            "mode": "System",
+            "vnetSubnetID": "[parameters('subnetId')]",
+            "enableAutoScaling": false,
+            "type": "VirtualMachineScaleSets",
+            "osDiskSizeGB": 128,
+            "osDiskType": "Managed"
+          }
+        ],
+        "servicePrincipalProfile": {
+          "clientId": "[parameters('servicePrincipalClientId')]",
+          "secret": "[parameters('servicePrincipalClientSecret')]"
+        },
+        "networkProfile": {
+          "networkPlugin": "azure",
+          "networkMode": "transparent",
+          "serviceCidr": "10.0.0.0/16",
+          "dnsServiceIP": "10.0.0.10",
+          "podCidr": "10.244.0.0/16",
+          "loadBalancerSku": "standard",
+          "outboundType": "loadBalancer"
+        },
+        "addonProfiles": {
+          "omsagent": {
+            "enabled": "[parameters('enableContainerInsights')]",
+            "config": {
+              "logAnalyticsWorkspaceResourceID": "[parameters('workspaceResourceId')]"
+            }
+          },
+          "azureKeyvaultSecretsProvider": {
+            "enabled": true,
+            "config": {
+              "enableSecretRotation": "false"
+            }
+          }
+        },
+        "apiServerAccessProfile": {
+          "enablePrivateCluster": false
+        },
+        "autoUpgradeProfile": {
+          "upgradeChannel": "patch"
+        },
+        "disableLocalAccounts": false,
+        "secrelativePathtyProfile": {
+          "workloadIdentity": {
+            "enabled": true
+          },
+          "imageCleaner": {
+            "enabled": true,
+            "intervalHours": 24
+          }
+        }
+      }
+    }
+  ],
+  "outputs": {
+    "aksClusterName": {
+      "type": "string",
+      "value": "[parameters('clusterName')]"
+    },
+    "aksClusterFQDN": {
+      "type": "string",
+      "value": "[reference(parameters('clusterName')).fqdn]"
+    }
+  }
+}
