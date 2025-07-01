@@ -21,12 +21,12 @@
   },
   "resources": [
     {
-      "type": "Microsoft.Network/networkSecrelativePathtyGroups",
+      "type": "Microsoft.Network/networkSecurityGroups",
       "apiVersion": "2023-04-01",
       "name": "[parameters('nsgName')]",
       "location": "[parameters('location')]",
       "properties": {
-        "secrelativePathtyRules": [
+        "securityRules": [
           {
             "name": "AllowHTTPS",
             "properties": {
