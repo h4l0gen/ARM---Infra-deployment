@@ -68,8 +68,8 @@
         "networkProfile": {
           "networkPlugin": "azure",
           "networkMode": "transparent",
-          "serviceCidr": "10.0.0.0/16",
-          "dnsServiceIP": "10.0.0.10",
+          "serviceCidr": "10.10.0.0/16",
+          "dnsServiceIP": "10.10.0.10",
           "podCidr": "10.244.0.0/16",
           "loadBalancerSku": "standard",
           "outboundType": "loadBalancer"
