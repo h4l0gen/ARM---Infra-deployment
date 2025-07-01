@@ -28,7 +28,6 @@
         "enableRbacAuthorization": true,
         "enableSoftDelete": true,
         "softDeleteRetentionInDays": 7,
-        // "enablePurgeProtection": true,  // either true or needs to be removed
         "publicNetworkAccess": "Enabled",
         "accessPolicies": []
       }
