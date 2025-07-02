@@ -3,13 +3,32 @@
   "contentVersion": "1.0.0.0",
   "parameters": {
     "keyVaultName": {
-      "type": "string"
+      "type": "string",
+      "metadata": {
+        "description": "Name of the Key Vault"
+      }
     },
     "location": {
-      "type": "string"
+      "type": "string",
+      "metadata": {
+        "description": "Location for the Key Vault"
+      }
+    },
+    "enabledForDeployment": {
+      "type": "bool",
+      "defaultValue": true,
+      "metadata": {
+        "description": "Enable Key Vault for deployment"
+      }
+    },
+    "enabledForTemplateDeployment": {
+      "type": "bool",
+      "defaultValue": true,
+      "metadata": {
+        "description": "Enable Key Vault for template deployment"
+      }
     }
   },
-  "variables": {},
   "resources": [
     {
       "type": "Microsoft.KeyVault/vaults",
@@ -22,25 +41,29 @@
           "name": "standard"
         },
         "tenantId": "[subscription().tenantId]",
-        "enabledForDeployment": true,
-        "enabledForTemplateDeployment": true,
-        "enabledForDiskEncryption": true,
-        "enableRbacAuthorization": true,
+        "accessPolicies": [],
+        "enabledForDeployment": "[parameters('enabledForDeployment')]",
+        "enabledForDiskEncryption": false,
+        "enabledForTemplateDeployment": "[parameters('enabledForTemplateDeployment')]",
         "enableSoftDelete": true,
-        "softDeleteRetentionInDays": 7,
-        "publicNetworkAccess": "Enabled",
-        "accessPolicies": []
+        "softDeleteRetentionInDays": 90,
+        "enableRbacAuthorization": true,
+        "publicNetworkAccess": "Enabled"
       }
     }
   ],
   "outputs": {
+    "keyVaultId": {
+      "type": "string",
+      "value": "[resourceId('Microsoft.KeyVault/vaults', parameters('keyVaultName'))]"
+    },
     "keyVaultName": {
       "type": "string",
       "value": "[parameters('keyVaultName')]"
     },
-    "keyVaultId": {
+    "vaultUri": {
       "type": "string",
-      "value": "[resourceId('Microsoft.KeyVault/vaults', parameters('keyVaultName'))]"
+      "value": "[reference(resourceId('Microsoft.KeyVault/vaults', parameters('keyVaultName'))).vaultUri]"
     }
   }
 }
