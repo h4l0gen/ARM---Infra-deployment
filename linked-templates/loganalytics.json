@@ -40,7 +40,7 @@
         },
         "dailyQuotaGb": {
             "type": "int",
-            "defaultValue": "1",
+            "defaultValue": 1,
             "metadata": {
                 "description": "Daily ingestion limit in GB"
             }
