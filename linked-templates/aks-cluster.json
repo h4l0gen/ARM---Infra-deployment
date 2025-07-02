@@ -3,118 +3,131 @@
   "contentVersion": "1.0.0.0",
   "parameters": {
     "clusterName": {
-      "type": "string"
+      "type": "string",
+      "metadata": {
+        "description": "The name of the AKS cluster"
+      }
     },
     "location": {
-      "type": "string"
+      "type": "string",
+      "metadata": {
+        "description": "Location for the AKS cluster"
+      }
     },
-    "nodeCount": {
-      "type": "int"
-    },
-    "nodeVMSize": {
-      "type": "string"
+    "dnsPrefix": {
+      "type": "string",
+      "metadata": {
+        "description": "DNS prefix for the AKS cluster"
+      }
     },
     "kubernetesVersion": {
-      "type": "string"
-    },
-    "servicePrincipalClientId": {
-      "type": "string"
-    },
-    "servicePrincipalClientSecret": {
-      "type": "securestring"
+      "type": "string",
+      "metadata": {
+        "description": "Kubernetes version"
+      }
     },
     "subnetId": {
-      "type": "string"
+      "type": "string",
+      "metadata": {
+        "description": "Resource ID of the subnet for AKS"
+      }
     },
-    "workspaceResourceId": {
-      "type": "string"
+    "acrName": {
+      "type": "string",
+      "metadata": {
+        "description": "Name of the ACR to attach"
+      }
     },
-    "enableContainerInsights": {
-      "type": "bool"
+    "vmSize": {
+      "type": "string",
+      "defaultValue": "Standard_D2s_v3",
+      "metadata": {
+        "description": "VM size for the node pool"
+      }
+    },
+    "nodeCount": {
+      "type": "int",
+      "defaultValue": 1,
+      "metadata": {
+        "description": "Number of nodes in the node pool"
+      }
     }
   },
-  "variables": {},
+  "variables": {
+    "acrPullRoleId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '7f951dda-4ed3-4680-a7ca-43fe172d538d')]"
+  },
   "resources": [
     {
       "type": "Microsoft.ContainerService/managedClusters",
-      "apiVersion": "2023-07-01",
+      "apiVersion": "2023-10-01",
       "name": "[parameters('clusterName')]",
       "location": "[parameters('location')]",
       "identity": {
         "type": "SystemAssigned"
       },
       "properties": {
+        "dnsPrefix": "[parameters('dnsPrefix')]",
         "kubernetesVersion": "[parameters('kubernetesVersion')]",
-        "dnsPrefix": "[parameters('clusterName')]",
         "enableRBAC": true,
         "agentPoolProfiles": [
           {
-            "name": "agentpool",
+            "name": "nodepool1",
             "count": "[parameters('nodeCount')]",
-            "vmSize": "[parameters('nodeVMSize')]",
-            "osType": "Linux",
-            "mode": "System",
-            "vnetSubnetID": "[parameters('subnetId')]",
-            "enableAutoScaling": false,
-            "type": "VirtualMachineScaleSets",
+            "vmSize": "[parameters('vmSize')]",
             "osDiskSizeGB": 128,
-            "osDiskType": "Managed"
+            "osDiskType": "Managed",
+            "maxPods": 110,
+            "type": "VirtualMachineScaleSets",
+            "mode": "System",
+            "osType": "Linux",
+            "enableAutoScaling": false,
+            "vnetSubnetID": "[parameters('subnetId')]"
           }
         ],
-        "servicePrincipalProfile": {
-          "clientId": "[parameters('servicePrincipalClientId')]",
-          "secret": "[parameters('servicePrincipalClientSecret')]"
-        },
         "networkProfile": {
           "networkPlugin": "azure",
-          "networkMode": "transparent",
-          "serviceCidr": "10.10.0.0/16",
-          "dnsServiceIP": "10.10.0.10",
-          "podCidr": "10.244.0.0/16",
+          "networkPolicy": "azure",
           "loadBalancerSku": "standard",
-          "outboundType": "loadBalancer"
+          "serviceCidr": "10.1.0.0/16",
+          "dnsServiceIP": "10.1.0.10"
         },
         "addonProfiles": {
-          "omsagent": {
-            "enabled": "[parameters('enableContainerInsights')]",
-            "config": {
-              "logAnalyticsWorkspaceResourceID": "[parameters('workspaceResourceId')]"
-            }
-          },
           "azureKeyvaultSecretsProvider": {
             "enabled": true,
             "config": {
               "enableSecretRotation": "false"
             }
           }
-        },
-        "apiServerAccessProfile": {
-          "enablePrivateCluster": false
-        },
-        "autoUpgradeProfile": {
-          "upgradeChannel": "patch"
-        },
-        "disableLocalAccounts": false,
-        "secrelativePathtyProfile": {
-          "workloadIdentity": {
-            "enabled": true
-          },
-          "imageCleaner": {
-            "enabled": true,
-            "intervalHours": 24
-          }
         }
+      }
+    },
+    {
+      "type": "Microsoft.Authorization/roleAssignments",
+      "apiVersion": "2022-04-01",
+      "name": "[guid(resourceId('Microsoft.ContainerService/managedClusters', parameters('clusterName')), parameters('acrName'))]",
+      "scope": "[resourceId('Microsoft.ContainerRegistry/registries', parameters('acrName'))]",
+      "dependsOn": [
+        "[resourceId('Microsoft.ContainerService/managedClusters', parameters('clusterName'))]"
+      ],
+      "properties": {
+        "roleDefinitionId": "[variables('acrPullRoleId')]",
+        "principalId": "[reference(resourceId('Microsoft.ContainerService/managedClusters', parameters('clusterName')), '2023-10-01').identityProfile.kubeletidentity.objectId]",
+        "principalType": "ServicePrincipal"
       }
     }
   ],
   "outputs": {
-    "aksClusterName": {
+    "clusterName": {
       "type": "string",
       "value": "[parameters('clusterName')]"
     },
-    "aksClusterFQDN": {
+    "clusterFQDN": {
       "type": "string",
-      "value": "[reference(parameters('clusterName')).fqdn]"
+      "value": "[reference(resourceId('Microsoft.ContainerService/managedClusters', parameters('clusterName'))).fqdn]"
+    },
+    "clusterIdentity": {
+      "type": "string",
+      "value": "[reference(resourceId('Microsoft.ContainerService/managedClusters', parameters('clusterName')), '2023-10-01', 'Full').identity.principalId]"
     }
   }
 }
