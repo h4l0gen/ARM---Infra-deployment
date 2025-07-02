@@ -3,42 +3,57 @@
   "contentVersion": "1.0.0.0",
   "parameters": {
     "acrName": {
-      "type": "string"
+      "type": "string",
+      "metadata": {
+        "description": "Name of the Azure Container Registry"
+      }
     },
     "location": {
-      "type": "string"
+      "type": "string",
+      "metadata": {
+        "description": "Location for the ACR"
+      }
+    },
+    "acrSku": {
+      "type": "string",
+      "defaultValue": "Basic",
+      "allowedValues": [
+        "Basic",
+        "Standard",
+        "Premium"
+      ],
+      "metadata": {
+        "description": "SKU for the Azure Container Registry"
+      }
     }
   },
-  "variables": {},
   "resources": [
     {
       "type": "Microsoft.ContainerRegistry/registries",
-      "apiVersion": "2023-01-01-preview",
+      "apiVersion": "2023-07-01",
       "name": "[parameters('acrName')]",
       "location": "[parameters('location')]",
       "sku": {
-        "name": "Basic"
+        "name": "[parameters('acrSku')]"
       },
       "properties": {
-        "adminUserEnabled": true,
-        "encryption": {
-          "status": "disabled"
-        },
-        "dataEndpointEnabled": false,
-        "publicNetworkAccess": "Enabled",
-        "networkRuleBypassOptions": "AzureServices",
-        "zoneRedundancy": "Disabled"
+        "adminUserEnabled": false,
+        "publicNetworkAccess": "Enabled"
       }
     }
   ],
   "outputs": {
-    "acrLoginServer": {
-      "type": "string",
-      "value": "[reference(parameters('acrName')).loginServer]"
-    },
     "acrName": {
       "type": "string",
       "value": "[parameters('acrName')]"
+    },
+    "acrId": {
+      "type": "string",
+      "value": "[resourceId('Microsoft.ContainerRegistry/registries', parameters('acrName'))]"
+    },
+    "loginServer": {
+      "type": "string",
+      "value": "[reference(resourceId('Microsoft.ContainerRegistry/registries', parameters('acrName'))).loginServer]"
     }
   }
 }
