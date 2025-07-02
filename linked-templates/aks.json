@@ -51,6 +51,20 @@
       "metadata": {
         "description": "Number of nodes in the node pool"
       }
+    },
+    "logAnalyticsWorkspaceId": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "Resource ID of Log Analytics workspace for monitoring"
+      }
+    },
+    "enableMonitoring": {
+      "type": "bool",
+      "defaultValue": "true",
+      "metadata": {
+        "description": "Enable monitoring for the AKS cluster"
+      }
     }
   },
   "variables": {
@@ -96,6 +110,12 @@
             "enabled": true,
             "config": {
               "enableSecretRotation": "false"
+            }
+          },
+          "omsagent": {
+            "enabled": "[and(parameters('enableMonitoring'), not(empty(parameters('logAnalyticsWorkspaceId'))))]",
+            "config": {
+              "logAnalyticsWorkspaceResourceID": "[parameters('logAnalyticsWorkspaceId')]"
             }
           }
         }
