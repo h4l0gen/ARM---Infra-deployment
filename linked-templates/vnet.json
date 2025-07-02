@@ -3,94 +3,72 @@
   "contentVersion": "1.0.0.0",
   "parameters": {
     "vnetName": {
-      "type": "string"
-    },
-    "subnetName": {
-      "type": "string"
-    },
-    "nsgName": {
-      "type": "string"
+      "type": "string",
+      "metadata": {
+        "description": "Name of the virtual network"
+      }
     },
     "location": {
-      "type": "string"
+      "type": "string",
+      "metadata": {
+        "description": "Location for the virtual network"
+      }
+    },
+    "vnetAddressPrefix": {
+      "type": "string",
+      "defaultValue": "10.0.0.0/16",
+      "metadata": {
+        "description": "Address prefix for the virtual network"
+      }
+    },
+    "subnetName": {
+      "type": "string",
+      "defaultValue": "aks-subnet",
+      "metadata": {
+        "description": "Name of the AKS subnet"
+      }
+    },
+    "subnetPrefix": {
+      "type": "string",
+      "defaultValue": "10.0.1.0/24",
+      "metadata": {
+        "description": "Address prefix for the AKS subnet"
+      }
     }
-  },
-  "variables": {
-    "vnetAddressPrefix": "10.0.0.0/16",
-    "subnetAddressPrefix": "10.0.1.0/24"
   },
   "resources": [
     {
       "type": "Microsoft.Network/networkSecurityGroups",
-      "apiVersion": "2023-04-01",
-      "name": "[parameters('nsgName')]",
+      "apiVersion": "2023-05-01",
+      "name": "[concat(parameters('vnetName'), '-nsg')]",
       "location": "[parameters('location')]",
       "properties": {
-        "securityRules": [
-          {
-            "name": "AllowHTTPS",
-            "properties": {
-              "protocol": "Tcp",
-              "sourcePortRange": "*",
-              "destinationPortRange": "443",
-              "sourceAddressPrefix": "*",
-              "destinationAddressPrefix": "*",
-              "access": "Allow",
-              "priority": 1001,
-              "direction": "Inbound"
-            }
-          },
-          {
-            "name": "AllowHTTP",
-            "properties": {
-              "protocol": "Tcp",
-              "sourcePortRange": "*",
-              "destinationPortRange": "80",
-              "sourceAddressPrefix": "*",
-              "destinationAddressPrefix": "*",
-              "access": "Allow",
-              "priority": 1002,
-              "direction": "Inbound"
-            }
-          },
-          {
-            "name": "AllowKubernetes",
-            "properties": {
-              "protocol": "Tcp",
-              "sourcePortRange": "*",
-              "destinationPortRange": "6443",
-              "sourceAddressPrefix": "*",
-              "destinationAddressPrefix": "*",
-              "access": "Allow",
-              "priority": 1003,
-              "direction": "Inbound"
-            }
-          }
-        ]
+        "securityRules": []
       }
     },
     {
       "type": "Microsoft.Network/virtualNetworks",
-      "apiVersion": "2023-04-01",
+      "apiVersion": "2023-05-01",
       "name": "[parameters('vnetName')]",
       "location": "[parameters('location')]",
       "dependsOn": [
-        "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('nsgName'))]"
+        "[resourceId('Microsoft.Network/networkSecurityGroups', concat(parameters('vnetName'), '-nsg'))]"
       ],
       "properties": {
         "addressSpace": {
           "addressPrefixes": [
-            "[variables('vnetAddressPrefix')]"
+            "[parameters('vnetAddressPrefix')]"
           ]
         },
         "subnets": [
           {
             "name": "[parameters('subnetName')]",
             "properties": {
-              "addressPrefix": "[variables('subnetAddressPrefix')]",
+              "addressPrefix": "[parameters('subnetPrefix')]",
               "networkSecurityGroup": {
-                "id": "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('nsgName'))]"
-              }
+                "id": "[resourceId('Microsoft.Network/networkSecurityGroups', concat(parameters('vnetName'), '-nsg'))]"
+              },
+              "privateEndpointNetworkPolicies": "Disabled"
             }
           }
         ]
@@ -105,10 +83,6 @@
     "subnetId": {
       "type": "string",
       "value": "[resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('vnetName'), parameters('subnetName'))]"
-    },
-    "nsgId": {
-      "type": "string",
-      "value": "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('nsgName'))]"
     }
   }
 }
