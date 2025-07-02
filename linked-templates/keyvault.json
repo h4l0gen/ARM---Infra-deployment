@@ -46,7 +46,7 @@
         "enabledForDiskEncryption": false,
         "enabledForTemplateDeployment": "[parameters('enabledForTemplateDeployment')]",
         "enableSoftDelete": true,
-        "softDeleteRetentionInDays": 90,
+        "softDeleteRetentionInDays": 7,
         "enableRbacAuthorization": true,
         "publicNetworkAccess": "Enabled"
       }
