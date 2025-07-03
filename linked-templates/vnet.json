@@ -45,11 +45,11 @@
       "properties": {
         "securityRules": [
           {
-            "name": "AllowHTTPAndHTTPS",
+            "name": "AllowHTTPInbound",
             "properties": {
               "protocol": "Tcp",
               "sourcePortRange": "*",
-              "destinationPortRange": "80-443",
+              "destinationPortRange": "80",
               "sourceAddressPrefix": "*",
               "destinationAddressPrefix": "*",
               "access": "Allow",
@@ -58,11 +58,11 @@
             }
           },
           {
-            "name": "AllowSSH",
+            "name": "AllowHTTPSInbound",
             "properties": {
               "protocol": "Tcp",
               "sourcePortRange": "*",
-              "destinationPortRange": "22",
+              "destinationPortRange": "443",
               "sourceAddressPrefix": "*",
               "destinationAddressPrefix": "*",
               "access": "Allow",
@@ -71,11 +71,11 @@
             }
           },
           {
-            "name": "AllowKibana",
+            "name": "AllowKubeletInbound",
             "properties": {
               "protocol": "Tcp",
               "sourcePortRange": "*",
-              "destinationPortRange": "5601",
+              "destinationPortRange": "10250",
               "sourceAddressPrefix": "*",
               "destinationAddressPrefix": "*",
               "access": "Allow",
