@@ -42,9 +42,6 @@
       "apiVersion": "2023-05-01",
       "name": "[parameters('vnetName')]",
       "location": "[parameters('location')]",
-      "dependsOn": [
-        "[resourceId('Microsoft.Network/networkSecurityGroups', concat(parameters('vnetName'), '-nsg'))]"
-      ],
       "properties": {
         "addressSpace": {
           "addressPrefixes": [
@@ -56,9 +53,6 @@
             "name": "[parameters('subnetName')]",
             "properties": {
               "addressPrefix": "[parameters('subnetPrefix')]",
-              "networkSecurityGroup": {
-                "id": "[resourceId('Microsoft.Network/networkSecurityGroups', concat(parameters('vnetName'), '-nsg'))]"
-              },
               "privateEndpointNetworkPolicies": "Disabled"
             }
           }
