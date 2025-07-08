@@ -7,10 +7,11 @@ echo "Starting Elastic Stack deployment..."
 az aks get-credentials --resource-group $RESOURCE_GROUP --name $CLUSTER_NAME --overwrite-existing
 
 # Install kubectl
-# az aks install-cli --only-show-errors
+az aks install-cli --only-show-errors
 
 # Install Helm
-# 
+curl https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 | bash
+
 # Add Helm repositories
 helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
 helm repo add jetstack https://charts.jetstack.io
