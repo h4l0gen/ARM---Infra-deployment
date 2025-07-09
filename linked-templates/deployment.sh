@@ -29,7 +29,7 @@ helm upgrade --install ingress-nginx ingress-nginx/ingress-nginx \
   --set controller.admissionWebhooks.enabled=false \
   --set controller.service.type=LoadBalancer \
   --set controller.service.externalTrafficPolicy=Local \
-  --set controller.service.annotations."service\.beta\.kubernetes\.io/azure-load-balancer-health-probe-request-path"=/healthz
+  --set controller.service.annotations."service\.beta\.kubernetes\.io/azure-load-balancer-health-probe-request-path"=/healthz \
   --wait --timeout 10m
 
 # Wait for LoadBalancer IP
