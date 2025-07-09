@@ -29,40 +29,90 @@ helm upgrade --install ingress-nginx ingress-nginx/ingress-nginx \
   --set controller.admissionWebhooks.enabled=false \
   --set controller.service.type=LoadBalancer \
   --set controller.service.externalTrafficPolicy=Local \
+  --set controller.service.annotations."service\.beta\.kubernetes\.io/azure-load-balancer-internal"="false" \
   --set controller.service.annotations."service\.beta\.kubernetes\.io/azure-load-balancer-health-probe-request-path"=/healthz \
   --wait --timeout 10m
 
 # Wait for LoadBalancer IP
 echo "Waiting for LoadBalancer IP..."
-for i in {1..30}; do
+for i in {1..60}; do
   LB_IP=$(kubectl get svc -n ingress-nginx ingress-nginx-controller -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
-  if [ -n "$LB_IP" ]; then
+  if [ -n "$LB_IP" ] && [ "$LB_IP" != "" ]; then
     echo "LoadBalancer IP: $LB_IP"
-    break
+    # Check if it's an internal IP
+    if [[ $LB_IP =~ ^(10\.|172\.(1[6-9]|2[0-9]|3[0-1])\.|192\.168\.) ]]; then
+      echo "WARNING: Got internal IP $LB_IP, waiting for external IP..."
+    else
+      echo "Got external IP: $LB_IP"
+      break
+    fi
   fi
-  echo "Waiting for LoadBalancer IP... ($i/30)"
+  echo "Waiting for LoadBalancer IP... ($i/60)"
   sleep 10
 done
 
-INGRESS_IP=$(kubectl get service -n ingress-nginx ingress-nginx-controller -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+INGRESS_IP=$LB_IP
 
 # CRUCIAL: Configure DNS name on the public IP
 echo "Configuring Azure DNS name..."
-# Find the public IP resource
-PUBLIC_IP_INFO=$(az network public-ip list --query "[?ipAddress=='$INGRESS_IP'].{name:name, rg:resourceGroup}" -o json | jq -r '.[0]')
+
+# # Find the public IP resource - check all resource groups
+# PUBLIC_IP_INFO=$(az network public-ip list --query "[?ipAddress=='$INGRESS_IP']" -o json | jq -r '.[0]')
+
+# if [ -z "$PUBLIC_IP_INFO" ] || [ "$PUBLIC_IP_INFO" == "null" ]; then
+#     echo "ERROR: Could not find public IP $INGRESS_IP"
+#     exit 1
+# fi
+
+# Find the public IP resource - first in node resource group
+NODE_RG=$(az aks show --resource-group $RESOURCE_GROUP --name $CLUSTER_NAME --query nodeResourceGroup -o tsv)
+PUBLIC_IP_INFO=$(az network public-ip list --resource-group $NODE_RG --query "[?ipAddress=='$INGRESS_IP']" -o json | jq -r '.[0]')
+
+# If not found in node RG, check all resource groups
+if [ -z "$PUBLIC_IP_INFO" ] || [ "$PUBLIC_IP_INFO" == "null" ]; then
+  echo "Checking all resource groups for IP $INGRESS_IP..."
+  PUBLIC_IP_INFO=$(az network public-ip list --query "[?ipAddress=='$INGRESS_IP']" -o json | jq -r '.[0]')
+fi
+
+if [ -z "$PUBLIC_IP_INFO" ] || [ "$PUBLIC_IP_INFO" == "null" ]; then
+    echo "ERROR: Could not find public IP $INGRESS_IP"
+    echo "This might be because the IP is internal. Trying to find LoadBalancer public IP..."
+    
+    # Alternative: Find public IP by LoadBalancer name
+    LB_PUBLIC_IP=$(az network public-ip list --resource-group $NODE_RG --query "[?contains(name, 'kubernetes')]" -o json | jq -r '.[0]')
+    if [ -n "$LB_PUBLIC_IP" ] && [ "$LB_PUBLIC_IP" != "null" ]; then
+      PUBLIC_IP_INFO=$LB_PUBLIC_IP
+      INGRESS_IP=$(echo $PUBLIC_IP_INFO | jq -r '.ipAddress')
+      echo "Found LoadBalancer public IP: $INGRESS_IP"
+    else
+      echo "ERROR: Could not find any public IP for the LoadBalancer"
+      exit 1
+    fi
+fi
+
 PUBLIC_IP_NAME=$(echo $PUBLIC_IP_INFO | jq -r '.name')
-PUBLIC_IP_RG=$(echo $PUBLIC_IP_INFO | jq -r '.rg')
+PUBLIC_IP_RG=$(echo $PUBLIC_IP_INFO | jq -r '.resourceGroup')
+
+echo "Found public IP: $PUBLIC_IP_NAME in resource group: $PUBLIC_IP_RG"
+
+# Validate we have both values
+if [ -z "$PUBLIC_IP_NAME" ] || [ -z "$PUBLIC_IP_RG" ] || [ "$PUBLIC_IP_NAME" == "null" ] || [ "$PUBLIC_IP_RG" == "null" ]; then
+    echo "ERROR: Could not extract public IP name or resource group"
+    echo "PUBLIC_IP_INFO: $PUBLIC_IP_INFO"
+    exit 1
+fi
 
 # Set DNS name
 az network public-ip update \
-  --resource-group $PUBLIC_IP_RG \
-  --name $PUBLIC_IP_NAME \
+  --resource-group "$PUBLIC_IP_RG" \
+  --name "$PUBLIC_IP_NAME" \
   --dns-name "kibana-${DNS_PREFIX}"
 
 # Get the FQDN
 AZURE_DOMAIN=$(az network public-ip show --resource-group $PUBLIC_IP_RG --name $PUBLIC_IP_NAME --query dnsSettings.fqdn -o tsv)
 echo "Azure domain configured: $AZURE_DOMAIN"
 
+KIBANA_DNS=$AZURE_DOMAIN
 
 # Install cert-manager
 echo "Installing cert-manager..."
@@ -119,7 +169,7 @@ helm upgrade --install kibana elastic/kibana \
   --wait --timeout 10m
 
 echo "Configuring Kibana Ingress..."
-KIBANA_DNS="kibana-${DNS_PREFIX}.${LOCATION}.cloudapp.azure.com"
+
 cat <<EOF | kubectl apply -f -
 apiVersion: networking.k8s.io/v1
 kind: Ingress
