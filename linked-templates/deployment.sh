@@ -123,12 +123,9 @@ metadata:
 spec:
   ingressClassName: nginx
   tls:
-  - hosts:
-    - $INGRESS_IP
-    secretName: kibana-tls
+  - secretName: kibana-tls
   rules:
-  - host: $INGRESS_IP
-    http:
+  - http:
       paths:
       - path: /
         pathType: Prefix
@@ -157,12 +154,9 @@ metadata:
 spec:
   ingressClassName: nginx
   tls:
-  - hosts:
-    - $INGRESS_IP
-    secretName: kibana-tls
+  - secretName: elasticsearch-tls
   rules:
-  - host: $INGRESS_IP
-    http:
+  - http:
       paths:
       - path: /elasticsearch(/|$)(.*)
         pathType: Prefix
