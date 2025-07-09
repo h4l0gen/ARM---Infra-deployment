@@ -44,6 +44,26 @@ for i in {1..30}; do
   sleep 10
 done
 
+INGRESS_IP=$(kubectl get service -n ingress-nginx ingress-nginx-controller -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+
+# CRUCIAL: Configure DNS name on the public IP
+echo "Configuring Azure DNS name..."
+# Find the public IP resource
+PUBLIC_IP_INFO=$(az network public-ip list --query "[?ipAddress=='$INGRESS_IP'].{name:name, rg:resourceGroup}" -o json | jq -r '.[0]')
+PUBLIC_IP_NAME=$(echo $PUBLIC_IP_INFO | jq -r '.name')
+PUBLIC_IP_RG=$(echo $PUBLIC_IP_INFO | jq -r '.rg')
+
+# Set DNS name
+az network public-ip update \
+  --resource-group $PUBLIC_IP_RG \
+  --name $PUBLIC_IP_NAME \
+  --dns-name "kibana-${DNS_PREFIX}"
+
+# Get the FQDN
+AZURE_DOMAIN=$(az network public-ip show --resource-group $PUBLIC_IP_RG --name $PUBLIC_IP_NAME --query dnsSettings.fqdn -o tsv)
+echo "Azure domain configured: $AZURE_DOMAIN"
+
+
 # Install cert-manager
 echo "Installing cert-manager..."
 helm upgrade --install cert-manager jetstack/cert-manager \
@@ -51,6 +71,11 @@ helm upgrade --install cert-manager jetstack/cert-manager \
   --set installCRDs=true \
   --version v1.13.3 \
   --wait --timeout 10m
+
+# Wait for cert-manager to be ready
+echo "Waiting for cert-manager to be ready..."
+kubectl wait --for=condition=ready pod -l app.kubernetes.io/instance=cert-manager -n cert-manager --timeout=300s
+
 
 # Create ClusterIssuer for Let's Encrypt
 echo "Creating Let's Encrypt ClusterIssuer..."
@@ -93,7 +118,6 @@ helm upgrade --install kibana elastic/kibana \
   --set resources.requests.memory="512Mi" \
   --wait --timeout 10m
 
-# Apply Kibana Ingress
 echo "Configuring Kibana Ingress..."
 KIBANA_DNS="kibana-${DNS_PREFIX}.${LOCATION}.cloudapp.azure.com"
 cat <<EOF | kubectl apply -f -
@@ -125,6 +149,7 @@ spec:
               number: 5601
 EOF
 
+
 # Apply Elasticsearch Ingress
 echo "Configuring Elasticsearch Ingress..."
 cat <<EOF | kubectl apply -f -
@@ -138,7 +163,7 @@ metadata:
     nginx.ingress.kubernetes.io/ssl-redirect: "true"
     cert-manager.io/cluster-issuer: "letsencrypt-prod"
     nginx.ingress.kubernetes.io/proxy-body-size: "10m"
-    nginx.ingress.kubernetes.io/rewrite-target: /\$1
+    nginx.ingress.kubernetes.io/rewrite-target: /\$2
     nginx.ingress.kubernetes.io/use-regex: "true"
 spec:
   ingressClassName: nginx
@@ -150,8 +175,8 @@ spec:
   - host: $KIBANA_DNS
     http:
       paths:
-      - path: /elasticsearch/(.*)
-        pathType: ImplementationSpecific
+      - path: /elasticsearch(/|$)(.*)
+        pathType: Prefix
         backend:
           service:
             name: elasticsearch-master
@@ -183,14 +208,20 @@ EOF
 
 # Wait for certificates to be ready
 echo "Waiting for certificates..."
-for i in {1..30}; do
-  if kubectl get certificate -n elastic-system kibana-tls -o jsonpath='{.status.conditions[?(@.type=="Ready")].status}' | grep -q "True"; then
+for i in {1..60}; do
+  CERT_READY=$(kubectl get certificate -n elastic-system kibana-tls -o jsonpath='{.status.conditions[?(@.type=="Ready")].status}' 2>/dev/null || echo "False")
+  if [ "$CERT_READY" == "True" ]; then
     echo "Certificate is ready!"
     break
   fi
-  echo "Waiting for certificate... ($i/30)"
+  echo "Waiting for certificate... ($i/60)"
   sleep 10
 done
+
+
+# Verify certificate
+kubectl describe certificate kibana-tls -n elastic-system
+
 
 # Get Elasticsearch password
 echo "Getting Elasticsearch credentials..."
@@ -220,11 +251,18 @@ API_KEY=$(echo $API_KEY_RESPONSE | jq -r .encoded)
 KIBANA_URL="https://$KIBANA_DNS"
 ES_ENDPOINT="https://$KIBANA_DNS/elasticsearch"
 
-# Output results
+#  Test the endpoints
+echo "Testing Kibana endpoint..."
+curl -I $KIBANA_URL || true
+
 echo "Deployment completed successfully!"
 echo "Kibana URL: $KIBANA_URL"
 echo "Elasticsearch Endpoint: $ES_ENDPOINT"
 echo "API Key: $API_KEY"
 
+# Example CURL command
+EXAMPLE_CURL="curl -X POST $ES_ENDPOINT/test-index/_doc -H 'Authorization: ApiKey $API_KEY' -H 'Content-Type: application/json' -d '{\"test\": \"data\"}'"
+echo "Example command: $EXAMPLE_CURL"
+
 # Set outputs for ARM template
-echo "{\"kibanaUrl\": \"$KIBANA_URL\", \"elasticsearchEndpoint\": \"$ES_ENDPOINT\", \"apiKey\": \"$API_KEY\"}" > $AZ_SCRIPTS_OUTPUT_PATH
+echo "{\"kibanaUrl\": \"$KIBANA_URL\", \"elasticsearchEndpoint\": \"$ES_ENDPOINT\", \"apiKey\": \"$API_KEY\", \"exampleCommand\": \"$EXAMPLE_CURL\"}" > $AZ_SCRIPTS_OUTPUT_PATH
