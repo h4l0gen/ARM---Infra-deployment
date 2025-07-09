@@ -51,70 +51,60 @@ for i in {1..60}; do
   sleep 10
 done
 
-INGRESS_IP=$(kubectl get service -n ingress-nginx ingress-nginx-controller -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+INGRESS_IP=$LB_IP
 
-# Get the MC_ resource group name directly
-# NODE_RG=$(az aks show --resource-group $RESOURCE_GROUP --name $CLUSTER_NAME --query nodeResourceGroup -o tsv)
-# echo "Node resource group: $NODE_RG"
-NODE_RG="MC_${RESOURCE_GROUP}_aksPOCKAPIL7798-aks_eastus"
-PUBLIC_IP_NAME=$(az network public-ip list --resource-group $NODE_RG --query "[?ipAddress=='$INGRESS_IP'].name" -o tsv)
-# # CRUCIAL: Configure DNS name on the public IP
-# echo "Configuring Azure DNS name..."
+# IMPORTANT: Wait for role assignment to propagate
+echo "Waiting for role assignments to propagate (30 seconds)..."
+sleep 30
 
-# # # Find the public IP resource - check all resource groups
-# # PUBLIC_IP_INFO=$(az network public-ip list --query "[?ipAddress=='$INGRESS_IP']" -o json | jq -r '.[0]')
+# Get the MC_ resource group name
+echo "Getting MC resource group name..."
+NODE_RG=$(az aks show --resource-group $RESOURCE_GROUP --name $CLUSTER_NAME --query nodeResourceGroup -o tsv)
+echo "Node resource group: $NODE_RG"
 
-# # if [ -z "$PUBLIC_IP_INFO" ] || [ "$PUBLIC_IP_INFO" == "null" ]; then
-# #     echo "ERROR: Could not find public IP $INGRESS_IP"
-# #     exit 1
-# # fi
+# Try to list public IPs with retry logic
+echo "Attempting to access public IPs in MC resource group..."
+for retry in {1..5}; do
+  echo "Attempt $retry of 5..."
+  
+  # Try to list public IPs
+  if PUBLIC_IPS=$(az network public-ip list --resource-group "$NODE_RG" 2>&1); then
+    echo "Successfully accessed public IPs"
+    break
+  else
+    echo "Failed to access public IPs: $PUBLIC_IPS"
+    if [ $retry -eq 5 ]; then
+      echo "ERROR: Cannot access MC resource group after 5 attempts"
+      echo "This might be a permission issue. The identity needs Contributor role on: $NODE_RG"
+      exit 1
+    fi
+    echo "Waiting 30 seconds before retry..."
+    sleep 30
+  fi
+done
 
-# # Find the public IP resource - first in node resource group
-# NODE_RG=$(az aks show --resource-group $RESOURCE_GROUP --name $CLUSTER_NAME --query nodeResourceGroup -o tsv)
-# PUBLIC_IP_INFO=$(az network public-ip list --resource-group $NODE_RG --query "[?ipAddress=='$INGRESS_IP']" -o json | jq -r '.[0]')
+# Find the public IP
+echo "Finding public IP for ingress..."
+PUBLIC_IP_NAME=$(az network public-ip list --resource-group "$NODE_RG" --query "[?ipAddress=='$INGRESS_IP'].name" -o tsv)
 
-# # If not found in node RG, check all resource groups
-# if [ -z "$PUBLIC_IP_INFO" ] || [ "$PUBLIC_IP_INFO" == "null" ]; then
-#   echo "Checking all resource groups for IP $INGRESS_IP..."
-#   PUBLIC_IP_INFO=$(az network public-ip list --query "[?ipAddress=='$INGRESS_IP']" -o json | jq -r '.[0]')
-# fi
+if [ -z "$PUBLIC_IP_NAME" ]; then
+  echo "ERROR: Could not find public IP with address $INGRESS_IP in resource group $NODE_RG"
+  echo "Available public IPs:"
+  az network public-ip list --resource-group "$NODE_RG" --query "[].{name:name, ip:ipAddress}" -o table
+  exit 1
+fi
 
-# if [ -z "$PUBLIC_IP_INFO" ] || [ "$PUBLIC_IP_INFO" == "null" ]; then
-#     echo "ERROR: Could not find public IP $INGRESS_IP"
-#     echo "This might be because the IP is internal. Trying to find LoadBalancer public IP..."
-    
-#     # Alternative: Find public IP by LoadBalancer name
-#     LB_PUBLIC_IP=$(az network public-ip list --resource-group $NODE_RG --query "[?contains(name, 'kubernetes')]" -o json | jq -r '.[0]')
-#     if [ -n "$LB_PUBLIC_IP" ] && [ "$LB_PUBLIC_IP" != "null" ]; then
-#       PUBLIC_IP_INFO=$LB_PUBLIC_IP
-#       INGRESS_IP=$(echo $PUBLIC_IP_INFO | jq -r '.ipAddress')
-#       echo "Found LoadBalancer public IP: $INGRESS_IP"
-#     else
-#       echo "ERROR: Could not find any public IP for the LoadBalancer"
-#       exit 1
-#     fi
-# fi
-
-# PUBLIC_IP_NAME=$(echo $PUBLIC_IP_INFO | jq -r '.name')
-# PUBLIC_IP_RG=$(echo $PUBLIC_IP_INFO | jq -r '.resourceGroup')
-
-# echo "Found public IP: $PUBLIC_IP_NAME in resource group: $PUBLIC_IP_RG"
-
-# # Validate we have both values
-# if [ -z "$PUBLIC_IP_NAME" ] || [ -z "$PUBLIC_IP_RG" ] || [ "$PUBLIC_IP_NAME" == "null" ] || [ "$PUBLIC_IP_RG" == "null" ]; then
-#     echo "ERROR: Could not extract public IP name or resource group"
-#     echo "PUBLIC_IP_INFO: $PUBLIC_IP_INFO"
-#     exit 1
-# fi
+echo "Found public IP: $PUBLIC_IP_NAME"
 
 # Set DNS name
+echo "Setting DNS name..."
 az network public-ip update \
   --resource-group "$NODE_RG" \
   --name "$PUBLIC_IP_NAME" \
   --dns-name "kibana-${DNS_PREFIX}"
 
 # Get the FQDN
-AZURE_DOMAIN=$(az network public-ip show --resource-group $NODE_RG --name $PUBLIC_IP_NAME --query dnsSettings.fqdn -o tsv)
+AZURE_DOMAIN=$(az network public-ip show --resource-group "$NODE_RG" --name "$PUBLIC_IP_NAME" --query dnsSettings.fqdn -o tsv)
 echo "Azure domain configured: $AZURE_DOMAIN"
 
 KIBANA_DNS=$AZURE_DOMAIN
@@ -130,7 +120,6 @@ helm upgrade --install cert-manager jetstack/cert-manager \
 # Wait for cert-manager to be ready
 echo "Waiting for cert-manager to be ready..."
 kubectl wait --for=condition=ready pod -l app.kubernetes.io/instance=cert-manager -n cert-manager --timeout=300s
-
 
 # Create ClusterIssuer for Let's Encrypt
 echo "Creating Let's Encrypt ClusterIssuer..."
@@ -173,8 +162,8 @@ helm upgrade --install kibana elastic/kibana \
   --set resources.requests.memory="512Mi" \
   --wait --timeout 10m
 
+# Apply Kibana Ingress
 echo "Configuring Kibana Ingress..."
-
 cat <<EOF | kubectl apply -f -
 apiVersion: networking.k8s.io/v1
 kind: Ingress
@@ -203,7 +192,6 @@ spec:
             port:
               number: 5601
 EOF
-
 
 # Apply Elasticsearch Ingress
 echo "Configuring Elasticsearch Ingress..."
@@ -239,28 +227,6 @@ spec:
               number: 9200
 EOF
 
-#Apply elastic config.yaml
-cat <<EOF | kubectl apply -f -
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: elasticsearch-config
-  namespace: elastic-system
-data:
-  elasticsearch.yml: |
-    xpack.security.enabled: true
-    xpack.security.enrollment.enabled: true
-    xpack.security.http.ssl.enabled: true
-    xpack.security.transport.ssl.enabled: true
-    # Allow API key authentication
-    xpack.security.authc.api_key.enabled: true
-    # Configure HTTP settings
-    http.cors.enabled: true
-    http.cors.allow-origin: "*"
-    http.cors.allow-methods: POST
-    http.cors.allow-headers: Authorization, X-Requested-With, Content-Type, Content-Length
-EOF
-
 # Wait for certificates to be ready
 echo "Waiting for certificates..."
 for i in {1..60}; do
@@ -273,18 +239,21 @@ for i in {1..60}; do
   sleep 10
 done
 
-
 # Verify certificate
 kubectl describe certificate kibana-tls -n elastic-system
-
 
 # Get Elasticsearch password
 echo "Getting Elasticsearch credentials..."
 ES_PASSWORD=$(kubectl get secret -n elastic-system elasticsearch-master-credentials -o jsonpath='{.data.password}' | base64 -d)
 
-# Create API key
+# Create API key using port-forward
+echo "Setting up port-forward to Elasticsearch..."
+kubectl port-forward -n elastic-system svc/elasticsearch-master 9200:9200 &
+PF_PID=$!
+sleep 5
+
 echo "Creating API key..."
-API_KEY_RESPONSE=$(kubectl exec -n elastic-system elasticsearch-master-0 -- curl -s -k -u elastic:$ES_PASSWORD \
+API_KEY_RESPONSE=$(curl -s -k -u elastic:$ES_PASSWORD \
   -X POST "https://localhost:9200/_security/api_key" \
   -H "Content-Type: application/json" \
   -d '{
@@ -300,13 +269,16 @@ API_KEY_RESPONSE=$(kubectl exec -n elastic-system elasticsearch-master-0 -- curl
     }
   }')
 
+# Kill port-forward
+kill $PF_PID 2>/dev/null || true
+
 API_KEY=$(echo $API_KEY_RESPONSE | jq -r .encoded)
 
 # Prepare outputs
 KIBANA_URL="https://$KIBANA_DNS"
 ES_ENDPOINT="https://$KIBANA_DNS/elasticsearch"
 
-#  Test the endpoints
+# Test the endpoints
 echo "Testing Kibana endpoint..."
 curl -I $KIBANA_URL || true
 
