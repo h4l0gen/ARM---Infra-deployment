@@ -56,7 +56,7 @@ INGRESS_IP=$(kubectl get service -n ingress-nginx ingress-nginx-controller -o js
 # Get the MC_ resource group name directly
 # NODE_RG=$(az aks show --resource-group $RESOURCE_GROUP --name $CLUSTER_NAME --query nodeResourceGroup -o tsv)
 # echo "Node resource group: $NODE_RG"
-NODE_RG=$(MC_$RESOURCE_GROUP_aksPOCKAPIL7798-aks_eastus)
+NODE_RG="MC_${RESOURCE_GROUP}_aksPOCKAPIL7798-aks_eastus"
 PUBLIC_IP_NAME=$(az network public-ip list --resource-group $NODE_RG --query "[?ipAddress=='$INGRESS_IP'].name" -o tsv)
 # # CRUCIAL: Configure DNS name on the public IP
 # echo "Configuring Azure DNS name..."
