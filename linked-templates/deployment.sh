@@ -53,61 +53,7 @@ done
 
 INGRESS_IP=$LB_IP
 
-# IMPORTANT: Wait for role assignment to propagate
-echo "Waiting for role assignments to propagate (30 seconds)..."
-sleep 30
 
-# Get the MC_ resource group name
-echo "Getting MC resource group name..."
-NODE_RG=$(az aks show --resource-group $RESOURCE_GROUP --name $CLUSTER_NAME --query nodeResourceGroup -o tsv)
-echo "Node resource group: $NODE_RG"
-
-# Try to list public IPs with retry logic
-echo "Attempting to access public IPs in MC resource group..."
-for retry in {1..5}; do
-  echo "Attempt $retry of 5..."
-  
-  # Try to list public IPs
-  if PUBLIC_IPS=$(az network public-ip list --resource-group "$NODE_RG" 2>&1); then
-    echo "Successfully accessed public IPs"
-    break
-  else
-    echo "Failed to access public IPs: $PUBLIC_IPS"
-    if [ $retry -eq 5 ]; then
-      echo "ERROR: Cannot access MC resource group after 5 attempts"
-      echo "This might be a permission issue. The identity needs Contributor role on: $NODE_RG"
-      exit 1
-    fi
-    echo "Waiting 30 seconds before retry..."
-    sleep 30
-  fi
-done
-
-# Find the public IP
-echo "Finding public IP for ingress..."
-PUBLIC_IP_NAME=$(az network public-ip list --resource-group "$NODE_RG" --query "[?ipAddress=='$INGRESS_IP'].name" -o tsv)
-
-if [ -z "$PUBLIC_IP_NAME" ]; then
-  echo "ERROR: Could not find public IP with address $INGRESS_IP in resource group $NODE_RG"
-  echo "Available public IPs:"
-  az network public-ip list --resource-group "$NODE_RG" --query "[].{name:name, ip:ipAddress}" -o table
-  exit 1
-fi
-
-echo "Found public IP: $PUBLIC_IP_NAME"
-
-# Set DNS name
-echo "Setting DNS name..."
-az network public-ip update \
-  --resource-group "$NODE_RG" \
-  --name "$PUBLIC_IP_NAME" \
-  --dns-name "kibana-${DNS_PREFIX}"
-
-# Get the FQDN
-AZURE_DOMAIN=$(az network public-ip show --resource-group "$NODE_RG" --name "$PUBLIC_IP_NAME" --query dnsSettings.fqdn -o tsv)
-echo "Azure domain configured: $AZURE_DOMAIN"
-
-KIBANA_DNS=$AZURE_DOMAIN
 
 # Install cert-manager
 echo "Installing cert-manager..."
@@ -178,10 +124,10 @@ spec:
   ingressClassName: nginx
   tls:
   - hosts:
-    - $KIBANA_DNS
+    - $INGRESS_IP
     secretName: kibana-tls
   rules:
-  - host: $KIBANA_DNS
+  - host: $INGRESS_IP
     http:
       paths:
       - path: /
@@ -212,10 +158,10 @@ spec:
   ingressClassName: nginx
   tls:
   - hosts:
-    - $KIBANA_DNS
+    - $INGRESS_IP
     secretName: kibana-tls
   rules:
-  - host: $KIBANA_DNS
+  - host: $INGRESS_IP
     http:
       paths:
       - path: /elasticsearch(/|$)(.*)
@@ -275,8 +221,8 @@ kill $PF_PID 2>/dev/null || true
 API_KEY=$(echo $API_KEY_RESPONSE | jq -r .encoded)
 
 # Prepare outputs
-KIBANA_URL="https://$KIBANA_DNS"
-ES_ENDPOINT="https://$KIBANA_DNS/elasticsearch"
+KIBANA_URL="https://$INGRESS_IP"
+ES_ENDPOINT="https://$INGRESS_IP/elasticsearch"
 
 # Test the endpoints
 echo "Testing Kibana endpoint..."
