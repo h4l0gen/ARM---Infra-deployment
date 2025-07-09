@@ -51,65 +51,70 @@ for i in {1..60}; do
   sleep 10
 done
 
-INGRESS_IP=$LB_IP
+INGRESS_IP=$(kubectl get service -n ingress-nginx ingress-nginx-controller -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
 
-# CRUCIAL: Configure DNS name on the public IP
-echo "Configuring Azure DNS name..."
+# Get the MC_ resource group name directly
+NODE_RG=$(az aks show --resource-group $RESOURCE_GROUP --name $CLUSTER_NAME --query nodeResourceGroup -o tsv)
+echo "Node resource group: $NODE_RG"
 
-# # Find the public IP resource - check all resource groups
-# PUBLIC_IP_INFO=$(az network public-ip list --query "[?ipAddress=='$INGRESS_IP']" -o json | jq -r '.[0]')
+PUBLIC_IP_NAME=$(az network public-ip list --resource-group $NODE_RG --query "[?ipAddress=='$INGRESS_IP'].name" -o tsv)
+# # CRUCIAL: Configure DNS name on the public IP
+# echo "Configuring Azure DNS name..."
+
+# # # Find the public IP resource - check all resource groups
+# # PUBLIC_IP_INFO=$(az network public-ip list --query "[?ipAddress=='$INGRESS_IP']" -o json | jq -r '.[0]')
+
+# # if [ -z "$PUBLIC_IP_INFO" ] || [ "$PUBLIC_IP_INFO" == "null" ]; then
+# #     echo "ERROR: Could not find public IP $INGRESS_IP"
+# #     exit 1
+# # fi
+
+# # Find the public IP resource - first in node resource group
+# NODE_RG=$(az aks show --resource-group $RESOURCE_GROUP --name $CLUSTER_NAME --query nodeResourceGroup -o tsv)
+# PUBLIC_IP_INFO=$(az network public-ip list --resource-group $NODE_RG --query "[?ipAddress=='$INGRESS_IP']" -o json | jq -r '.[0]')
+
+# # If not found in node RG, check all resource groups
+# if [ -z "$PUBLIC_IP_INFO" ] || [ "$PUBLIC_IP_INFO" == "null" ]; then
+#   echo "Checking all resource groups for IP $INGRESS_IP..."
+#   PUBLIC_IP_INFO=$(az network public-ip list --query "[?ipAddress=='$INGRESS_IP']" -o json | jq -r '.[0]')
+# fi
 
 # if [ -z "$PUBLIC_IP_INFO" ] || [ "$PUBLIC_IP_INFO" == "null" ]; then
 #     echo "ERROR: Could not find public IP $INGRESS_IP"
+#     echo "This might be because the IP is internal. Trying to find LoadBalancer public IP..."
+    
+#     # Alternative: Find public IP by LoadBalancer name
+#     LB_PUBLIC_IP=$(az network public-ip list --resource-group $NODE_RG --query "[?contains(name, 'kubernetes')]" -o json | jq -r '.[0]')
+#     if [ -n "$LB_PUBLIC_IP" ] && [ "$LB_PUBLIC_IP" != "null" ]; then
+#       PUBLIC_IP_INFO=$LB_PUBLIC_IP
+#       INGRESS_IP=$(echo $PUBLIC_IP_INFO | jq -r '.ipAddress')
+#       echo "Found LoadBalancer public IP: $INGRESS_IP"
+#     else
+#       echo "ERROR: Could not find any public IP for the LoadBalancer"
+#       exit 1
+#     fi
+# fi
+
+# PUBLIC_IP_NAME=$(echo $PUBLIC_IP_INFO | jq -r '.name')
+# PUBLIC_IP_RG=$(echo $PUBLIC_IP_INFO | jq -r '.resourceGroup')
+
+# echo "Found public IP: $PUBLIC_IP_NAME in resource group: $PUBLIC_IP_RG"
+
+# # Validate we have both values
+# if [ -z "$PUBLIC_IP_NAME" ] || [ -z "$PUBLIC_IP_RG" ] || [ "$PUBLIC_IP_NAME" == "null" ] || [ "$PUBLIC_IP_RG" == "null" ]; then
+#     echo "ERROR: Could not extract public IP name or resource group"
+#     echo "PUBLIC_IP_INFO: $PUBLIC_IP_INFO"
 #     exit 1
 # fi
 
-# Find the public IP resource - first in node resource group
-NODE_RG=$(az aks show --resource-group $RESOURCE_GROUP --name $CLUSTER_NAME --query nodeResourceGroup -o tsv)
-PUBLIC_IP_INFO=$(az network public-ip list --resource-group $NODE_RG --query "[?ipAddress=='$INGRESS_IP']" -o json | jq -r '.[0]')
-
-# If not found in node RG, check all resource groups
-if [ -z "$PUBLIC_IP_INFO" ] || [ "$PUBLIC_IP_INFO" == "null" ]; then
-  echo "Checking all resource groups for IP $INGRESS_IP..."
-  PUBLIC_IP_INFO=$(az network public-ip list --query "[?ipAddress=='$INGRESS_IP']" -o json | jq -r '.[0]')
-fi
-
-if [ -z "$PUBLIC_IP_INFO" ] || [ "$PUBLIC_IP_INFO" == "null" ]; then
-    echo "ERROR: Could not find public IP $INGRESS_IP"
-    echo "This might be because the IP is internal. Trying to find LoadBalancer public IP..."
-    
-    # Alternative: Find public IP by LoadBalancer name
-    LB_PUBLIC_IP=$(az network public-ip list --resource-group $NODE_RG --query "[?contains(name, 'kubernetes')]" -o json | jq -r '.[0]')
-    if [ -n "$LB_PUBLIC_IP" ] && [ "$LB_PUBLIC_IP" != "null" ]; then
-      PUBLIC_IP_INFO=$LB_PUBLIC_IP
-      INGRESS_IP=$(echo $PUBLIC_IP_INFO | jq -r '.ipAddress')
-      echo "Found LoadBalancer public IP: $INGRESS_IP"
-    else
-      echo "ERROR: Could not find any public IP for the LoadBalancer"
-      exit 1
-    fi
-fi
-
-PUBLIC_IP_NAME=$(echo $PUBLIC_IP_INFO | jq -r '.name')
-PUBLIC_IP_RG=$(echo $PUBLIC_IP_INFO | jq -r '.resourceGroup')
-
-echo "Found public IP: $PUBLIC_IP_NAME in resource group: $PUBLIC_IP_RG"
-
-# Validate we have both values
-if [ -z "$PUBLIC_IP_NAME" ] || [ -z "$PUBLIC_IP_RG" ] || [ "$PUBLIC_IP_NAME" == "null" ] || [ "$PUBLIC_IP_RG" == "null" ]; then
-    echo "ERROR: Could not extract public IP name or resource group"
-    echo "PUBLIC_IP_INFO: $PUBLIC_IP_INFO"
-    exit 1
-fi
-
 # Set DNS name
 az network public-ip update \
-  --resource-group "$PUBLIC_IP_RG" \
+  --resource-group "$NODE_RG" \
   --name "$PUBLIC_IP_NAME" \
   --dns-name "kibana-${DNS_PREFIX}"
 
 # Get the FQDN
-AZURE_DOMAIN=$(az network public-ip show --resource-group $PUBLIC_IP_RG --name $PUBLIC_IP_NAME --query dnsSettings.fqdn -o tsv)
+AZURE_DOMAIN=$(az network public-ip show --resource-group $NODE_RG --name $PUBLIC_IP_NAME --query dnsSettings.fqdn -o tsv)
 echo "Azure domain configured: $AZURE_DOMAIN"
 
 KIBANA_DNS=$AZURE_DOMAIN
