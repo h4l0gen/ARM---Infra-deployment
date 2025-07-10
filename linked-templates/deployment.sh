@@ -165,21 +165,6 @@ spec:
               number: 9200
 EOF
 
-# Wait for certificates to be ready
-echo "Waiting for certificates..."
-for i in {1..60}; do
-  CERT_READY=$(kubectl get certificate -n elastic-system kibana-tls -o jsonpath='{.status.conditions[?(@.type=="Ready")].status}' 2>/dev/null || echo "False")
-  if [ "$CERT_READY" == "True" ]; then
-    echo "Certificate is ready!"
-    break
-  fi
-  echo "Waiting for certificate... ($i/60)"
-  sleep 10
-done
-
-# Verify certificate
-kubectl describe certificate kibana-tls -n elastic-system
-
 # Get Elasticsearch password
 echo "Getting Elasticsearch credentials..."
 ES_PASSWORD=$(kubectl get secret -n elastic-system elasticsearch-master-credentials -o jsonpath='{.data.password}' | base64 -d)
