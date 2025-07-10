@@ -209,6 +209,7 @@ echo "Deployment completed successfully!"
 echo "Kibana URL: $KIBANA_URL"
 echo "Elasticsearch Endpoint: $ES_ENDPOINT"
 echo "API Key: $API_KEY"
+echo "Kibana password: $ES_PASSWORD"
 
 # Example CURL command
 EXAMPLE_CURL="curl -X POST $ES_ENDPOINT/test-index/_doc -H 'Authorization: ApiKey $API_KEY' -H 'Content-Type: application/json' -d '{\"test\": \"data\"}'"
