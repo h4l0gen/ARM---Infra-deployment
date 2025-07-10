@@ -211,9 +211,19 @@ echo "Elasticsearch Endpoint: $ES_ENDPOINT"
 echo "API Key: $API_KEY"
 echo "Kibana password: $ES_PASSWORD"
 
-# Example CURL command
-EXAMPLE_CURL="curl -X POST $ES_ENDPOINT/test-index/_doc -H 'Authorization: ApiKey $API_KEY' -H 'Content-Type: application/json' -d '{\"test\": \"data\"}'"
-echo "Example command: $EXAMPLE_CURL"
+# Validate API_KEY exists
+if [ -z "$API_KEY" ]; then
+    echo "Warning: API_KEY is empty, using placeholder"
+    API_KEY="API_KEY_GENERATION_FAILED"
+fi
 
-# Set outputs for ARM template
-echo "{\"kibanaUrl\": \"$KIBANA_URL\", \"elasticsearchEndpoint\": \"$ES_ENDPOINT\", \"apiKey\": \"$API_KEY\", \"exampleCommand\": \"$EXAMPLE_CURL\"}" > $AZ_SCRIPTS_OUTPUT_PATH
+# Create JSON output with proper escaping
+cat > $AZ_SCRIPTS_OUTPUT_PATH <<EOF
+{
+  "kibanaUrl": "$KIBANA_URL",
+  "elasticsearchEndpoint": "$ES_ENDPOINT",
+  "apiKey": "$API_KEY"
+}
+EOF
+
+echo "Output file created successfully"
