@@ -38,7 +38,7 @@
         "description": "Name of the ACR to attach"
       }
     },
-    "vmSize": {
+    "nodeVMSize": {
       "type": "string",
       "defaultValue": "Standard_D4s_v3",
       "metadata": {
@@ -73,7 +73,7 @@
           {
             "name": "nodepool1",
             "count": "[parameters('nodeCount')]",
-            "vmSize": "[parameters('vmSize')]",
+            "vmSize": "[parameters('nodeVMSize')]",
             "osDiskSizeGB": 128,
             "osDiskType": "Managed",
             "maxPods": 110,
