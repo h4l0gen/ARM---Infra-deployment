@@ -222,7 +222,8 @@ cat > $AZ_SCRIPTS_OUTPUT_PATH <<EOF
 {
   "kibanaUrl": "$KIBANA_URL",
   "elasticsearchEndpoint": "$ES_ENDPOINT",
-  "apiKey": "$API_KEY"
+  "apiKey": "$API_KEY",
+  "elasticPassword": "$ES_PASSWORD"
 }
 EOF
 
