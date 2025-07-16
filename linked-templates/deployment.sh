@@ -91,7 +91,7 @@ echo "Installing Elasticsearch..."
 helm upgrade --install elasticsearch elastic/elasticsearch \
   --namespace elastic-system --create-namespace \
   --set replicas=1 \
-  --version 8.8.0 \
+  --version 8.5.1 \
   --set security.enabled=true \
   --set resources.requests.memory="1Gi" \
   --set resources.requests.cpu="250m" \
@@ -102,7 +102,7 @@ helm upgrade --install elasticsearch elastic/elasticsearch \
 echo "Installing Kibana..."
 helm upgrade --install kibana elastic/kibana \
   --namespace elastic-system \
-  --version 8.8.0 \
+  --version 8.5.1 \
   --set replicas=1 \
   --set service.type=ClusterIP \
   --set resources.requests.memory="512Mi" \
