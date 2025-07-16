@@ -175,6 +175,7 @@ kubectl port-forward -n elastic-system svc/elasticsearch-master 9200:9200 &
 PF_PID=$!
 sleep 5
 
+# Permission needs to restrict
 echo "Creating API key..."
 API_KEY_RESPONSE=$(curl -s -k -u elastic:$ES_PASSWORD \
   -X POST "https://localhost:9200/_security/api_key" \
@@ -187,7 +188,14 @@ API_KEY_RESPONSE=$(curl -s -k -u elastic:$ES_PASSWORD \
         "indices": [{
           "names": ["*"],
           "privileges": ["write", "create_index", "auto_configure", "create"]
-        }]
+        }],
+        "applications": [
+          {
+            "application": "kibana-.kibana",
+            "privileges": ["all"],
+            "resources": ["*"]
+          }
+        ]
       }
     }
   }')
