@@ -1636,7 +1636,18 @@ curl -s --insecure -X PUT "$ES_ENDPOINT/test-index-simple" \
 
 
 # ios Prod index
-curl -s --insecure -X POST "$ES_ENDPOINT/%3Ctalsec_log_prod_ios_v2_%7Bnow%2Fd%7D-000001%3E" \
+# curl -s --insecure -X POST "$ES_ENDPOINT/%3Ctalsec_log_prod_ios_v2_%7Bnow%2Fd%7D-000001%3E" \
+#   -H "Authorization: ApiKey $API_KEY" \
+#   -H "Content-Type: application/json" \
+#   -d '{
+#     "aliases": {
+#       "talsec_log_prod_ios_write": {
+#         "is_write_index": true
+#       }
+#     }
+#   }'
+TODAY=$(date +%Y.%m.%d)
+curl -s --insecure -X PUT "$ES_ENDPOINT/talsec_log_prod_ios_v2_${TODAY}-000001" \
   -H "Authorization: ApiKey $API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
@@ -1648,7 +1659,7 @@ curl -s --insecure -X POST "$ES_ENDPOINT/%3Ctalsec_log_prod_ios_v2_%7Bnow%2Fd%7D
   }'
 
 # android prod index
-curl -s --insecure -X POST "$ES_ENDPOINT/%3Ctalsec_log_prod_android_v2_%7Bnow%2Fd%7D-000001%3E" \
+curl -s --insecure -X POST "$ES_ENDPOINT/talsec_log_prod_android_v2_${TODAY}-000001" \
   -H "Authorization: ApiKey $API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
@@ -1660,7 +1671,7 @@ curl -s --insecure -X POST "$ES_ENDPOINT/%3Ctalsec_log_prod_android_v2_%7Bnow%2F
   }'
 
 # ios dev index
-curl -s --insecure -X POST "$ES_ENDPOINT/%3Ctalsec_log_dev_ios_v2_%7Bnow%2Fd%7D-000001%3E" \
+curl -s --insecure -X POST "$ES_ENDPOINT/talsec_log_dev_ios_v2_${TODAY}-000001" \
   -H "Authorization: ApiKey $API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
@@ -1671,7 +1682,7 @@ curl -s --insecure -X POST "$ES_ENDPOINT/%3Ctalsec_log_dev_ios_v2_%7Bnow%2Fd%7D-
     }
   }'
 # android dev index
-curl -s --insecure -X POST "$ES_ENDPOINT/%3Ctalsec_log_dev_android_v2_%7Bnow%2Fd%7D-000001%3E" \
+curl -s --insecure -X POST "$ES_ENDPOINT/talsec_log_dev_android_v2_${TODAY}-000001" \
   -H "Authorization: ApiKey $API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
