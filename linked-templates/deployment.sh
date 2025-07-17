@@ -210,7 +210,7 @@ ES_ENDPOINT="https://$INGRESS_IP/elasticsearch"
 
 # Dashboard creation section
 echo "Creating default dashboard for $CUSTOMER_NAME..."
-curl -o /tmp/dashboard-template.ndjson https://raw.githubusercontent.com/h4l0gen/ARM---Infra-deployment/refs/heads/main/linked-templates/dashboard.ndjson
+curl -o /tmp/dashboard.ndjson https://raw.githubusercontent.com/h4l0gen/ARM---Infra-deployment/refs/heads/main/linked-templates/dashboard.ndjson
 
 # Replace placeholders in the dashboard
 sed -i "s/\"title\":\"Talsec\"/\"title\":\"$CUSTOMER_NAME Dashboard\"/g" /tmp/dashboard-template.ndjson
@@ -218,15 +218,23 @@ sed -i "s/\"title\":\"s\*\"/\"title\":\"$INDEX_PATTERN\"/g" /tmp/dashboard-templ
 sed -i "s/\"description\":\"testing\"/\"description\":\"$CUSTOMER_NAME Security Dashboard\"/g" /tmp/dashboard-template.ndjson
 
 echo "Waiting for Kibana to be ready..."
-until curl -s -k "$KIBANA_URL/api/status" | grep -q "\"state\":\"green\""; do
+TIMEOUT=300  # 5 minutes
+ELAPSED=0
+until curl -s -k "$KIBANA_URL/api/status" | grep -q "\"state\":\"green\"" || [ $ELAPSED -ge $TIMEOUT ]; do
   sleep 5
+  ELAPSED=$((ELAPSED + 5))
+  echo "Waited ${ELAPSED}s for Kibana..."
 done
+
+if [ $ELAPSED -ge $TIMEOUT ]; then
+  echo "Warning: Kibana health check timed out, proceeding anyway..."
+fi
 
 # Import dashboard using API key
 DASHBOARD_RESPONSE=$(curl -s -k -X POST "$KIBANA_URL/api/saved_objects/_import?overwrite=true" \
   -H "kbn-xsrf: true" \
   -H "Authorization: ApiKey $API_KEY" \
-  -F "file=@/tmp/dashboard-template.ndjson")
+  -F "file=@/tmp/dashboard.ndjson")
 
 echo "Dashboard import response: $DASHBOARD_RESPONSE"
 
@@ -237,6 +245,7 @@ else
   echo "Warning: Dashboard creation may have failed"
 fi
 
+#https://github.com/h4l0gen/ARM---Infra-deployment/tree/main/linked-templates
 # Test the endpoints
 echo "Testing Kibana endpoint..."
 curl -I $KIBANA_URL || true
