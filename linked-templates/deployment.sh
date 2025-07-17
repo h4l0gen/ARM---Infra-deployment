@@ -1510,7 +1510,7 @@ curl -s --insecure -X PUT "$ES_ENDPOINT/_component_template/talsec_mtalsec_incid
    }
 }'
 
-curl -s --insecure -X PUT "$ES_ENDPOINT/_component_template/talsec_log_android_v2" \
+curl -s --insecure -X PUT "$ES_ENDPOINT/_index_template/talsec_log_android_v2" \
   -H "Authorization: ApiKey $API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
@@ -1568,7 +1568,7 @@ curl -s --insecure -X PUT "$ES_ENDPOINT/_component_template/talsec_log_android_v
    ]
 }'
 
-curl -s --insecure -X PUT "$ES_ENDPOINT/_component_template/talsec_log_dev_android_v2" \
+curl -s --insecure -X PUT "$ES_ENDPOINT/_index_template/talsec_log_dev_android_v2" \
   -H "Authorization: ApiKey $API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
@@ -1628,6 +1628,11 @@ curl -s --insecure -X PUT "$ES_ENDPOINT/_component_template/talsec_log_dev_andro
 
 ###### IOS starts from here
 
+#simplet index creation for testing
+curl -s --insecure -X PUT "$ES_ENDPOINT/test-index-simple" \
+  -H "Authorization: ApiKey $API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{}'
 
 
 # ios Prod index
