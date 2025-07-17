@@ -178,27 +178,25 @@ sleep 5
 # Permission needs to restrict
 echo "Creating API key..."
 API_KEY_RESPONSE=$(curl -s -k -u elastic:$ES_PASSWORD \
-  -X POST "https://localhost:9200/_security/api_key" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "name": "marketplace-ingest-key",
-    "role_descriptors": {
-      "ingest_role": {
-        "cluster": ["monitor", "manage_index_templates", "manage_ingest_pipelines"],
-        "indices": [{
-          "names": ["*"],
-          "privileges": ["write", "create_index", "auto_configure", "create"]
-        }],
-        "applications": [
-          {
-            "application": "kibana-.kibana",
-            "privileges": ["all"],
-            "resources": ["*"]
-          }
-        ]
-      }
-    }
-  }')
+ -X POST "https://localhost:9200/_security/api_key" \
+ -H "Content-Type: application/json" \
+ -d '{
+   "name": "marketplace-superuser-key",
+   "role_descriptors": {
+     "superuser_role": {
+       "cluster": ["all"],
+       "indices": [{
+         "names": ["*"],
+         "privileges": ["all"]
+       }],
+       "applications": [{
+         "application": "*",
+         "privileges": ["*"],
+         "resources": ["*"]
+       }]
+     }
+   }
+ }')
 
 # Kill port-forward
 kill $PF_PID 2>/dev/null || true
@@ -208,14 +206,39 @@ API_KEY=$(echo $API_KEY_RESPONSE | jq -r .encoded)
 KIBANA_URL="https://$INGRESS_IP"
 ES_ENDPOINT="https://$INGRESS_IP/elasticsearch"
 
+# ILM policy creation
+echo "Creating ILM policy for $CUSTOMER_NAME..."
+
+curl -s --insecure -X PUT "$ES_ENDPOINT/_ilm/policy/talsec_prod_policy" \
+  -H "Authorization: ApiKey $API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "policy": {
+      "phases": {
+        "hot": {
+          "min_age": "0ms",
+          "actions": {
+            "rollover": {
+              "max_size": "10gb", 
+              "max_age": "3h"
+            },
+            "set_priority": {
+              "priority": 100
+            }
+          }
+        }
+      }
+    }
+  }'
+
 # Dashboard creation section
 echo "Creating default dashboard for $CUSTOMER_NAME..."
-curl -o /tmp/martin_ds.ndjson https://raw.githubusercontent.com/h4l0gen/ARM---Infra-deployment/refs/heads/main/linked-templates/martin_ds.ndjson
+curl -o /tmp/dashboard.ndjson https://raw.githubusercontent.com/h4l0gen/ARM---Infra-deployment/refs/heads/main/linked-templates/dashboard.ndjson
 
 # Replace placeholders in the dashboard
-sed -i "s/\"title\":\"Talsec\"/\"title\":\"$CUSTOMER_NAME Dashboard\"/g" /tmp/martin_ds.ndjson
-sed -i "s/\"title\":\"s\*\"/\"title\":\"$INDEX_PATTERN\"/g" /tmp/marting_ds.ndjson
-sed -i "s/\"description\":\"testing\"/\"description\":\"$CUSTOMER_NAME Security Dashboard\"/g" /tmp/martin_ds.ndjson
+sed -i "s/\"title\":\"Talsec\"/\"title\":\"$CUSTOMER_NAME Dashboard\"/g" /tmp/dashboard.ndjson
+sed -i "s/\"title\":\"s\*\"/\"title\":\"$INDEX_PATTERN\"/g" /tmp/dashboard.ndjson
+sed -i "s/\"description\":\"testing\"/\"description\":\"$CUSTOMER_NAME Security Dashboard\"/g" /tmp/dashboard.ndjson
 
 echo "Waiting for Kibana to be ready..."
 TIMEOUT=300  # 5 minutes
@@ -234,7 +257,7 @@ fi
 DASHBOARD_RESPONSE=$(curl -s -v --insecure -X POST "$KIBANA_URL/api/saved_objects/_import?overwrite=true" \
   -H "kbn-xsrf: true" \
   -H "Authorization: ApiKey $API_KEY" \
-  -F "file=@/tmp/martin_ds.ndjson")
+  -F "file=@/tmp/dashboard.ndjson")
 
 echo "Dashboard import response: $DASHBOARD_RESPONSE"
 
@@ -266,3 +289,34 @@ cat > $AZ_SCRIPTS_OUTPUT_PATH <<EOF
 EOF
 
 echo "Output file created successfully"
+
+
+# curl -s -k -u elastic:$ES_PASSWORD \
+#  -X POST "https://localhost:9200/_security/api_key" \
+#  -H "Content-Type: application/json" \
+#  -d '{
+#    "name": "marketplace-full-access-key",
+#    "role_descriptors": {
+#      "full_admin_role": {
+#        "cluster": [
+#          "monitor", 
+#          "manage_index_templates", 
+#          "manage_ingest_pipelines",
+#          "manage_ilm",
+#          "manage_enrich",
+#          "manage_api_key",
+#          "manage_security",
+#          "all"
+#        ],
+#        "indices": [{
+#          "names": ["*"],
+#          "privileges": ["all"]
+#        }],
+#        "applications": [{
+#          "application": "kibana-.kibana",
+#          "privileges": ["all"],
+#          "resources": ["*"]
+#        }]
+#      }
+#    }
+#  }'
