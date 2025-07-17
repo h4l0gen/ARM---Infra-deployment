@@ -213,9 +213,9 @@ echo "Creating default dashboard for $CUSTOMER_NAME..."
 curl -o /tmp/dashboard.ndjson https://raw.githubusercontent.com/h4l0gen/ARM---Infra-deployment/refs/heads/main/linked-templates/dashboard.ndjson
 
 # Replace placeholders in the dashboard
-sed -i "s/\"title\":\"Talsec\"/\"title\":\"$CUSTOMER_NAME Dashboard\"/g" /tmp/dashboard-template.ndjson
-sed -i "s/\"title\":\"s\*\"/\"title\":\"$INDEX_PATTERN\"/g" /tmp/dashboard-template.ndjson
-sed -i "s/\"description\":\"testing\"/\"description\":\"$CUSTOMER_NAME Security Dashboard\"/g" /tmp/dashboard-template.ndjson
+sed -i "s/\"title\":\"Talsec\"/\"title\":\"$CUSTOMER_NAME Dashboard\"/g" /tmp/dashboard.ndjson
+sed -i "s/\"title\":\"s\*\"/\"title\":\"$INDEX_PATTERN\"/g" /tmp/dashboard.ndjson
+sed -i "s/\"description\":\"testing\"/\"description\":\"$CUSTOMER_NAME Security Dashboard\"/g" /tmp/dashboard.ndjson
 
 echo "Waiting for Kibana to be ready..."
 TIMEOUT=300  # 5 minutes
