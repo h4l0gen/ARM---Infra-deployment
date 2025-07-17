@@ -231,6 +231,410 @@ curl -s --insecure -X PUT "$ES_ENDPOINT/_ilm/policy/talsec_prod_policy" \
     }
   }'
 
+# Common template 1
+curl -s --insecure -X PUT "$ES_ENDPOINT/_component_template/talsec_device_info" \
+  -H "Authorization: ApiKey $API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "template": {
+      "mappings": {
+        "properties": {
+          "instanceId": {
+            "type": "keyword"
+          },
+          "defaultDeviceId": {
+            "eager_global_ordinals": true,
+            "norms": false,
+            "index": true,
+            "store": false,
+            "type": "keyword",
+            "split_queries_on_whitespace": false,
+            "index_options": "docs",
+            "doc_values": true
+          },
+          "deviceState": {
+            "type": "object",
+            "properties": {
+              "biometrics": {
+                "type": "keyword"
+              },
+              "security": {
+                "type": "keyword"
+              },
+              "hwBackedKeychain": {
+                "type": "keyword"
+              }
+            }
+          },
+          "platform": {
+            "type": "keyword"
+          },
+          "deviceInfo": {
+            "type": "object",
+            "properties": {
+              "osVersion": {
+                "type": "keyword"
+              },
+              "model": {
+                "type": "keyword"
+              },
+              "manufacturer": {
+                "type": "keyword"
+              }
+            }
+          }
+        }
+      }
+    }
+  }'
+
+# common template 2
+curl -s --insecure -X PUT "$ES_ENDPOINT/_component_template/talsec_metadata" \
+  -H "Authorization: ApiKey $API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "template": {
+      "mappings": {
+        "properties": {
+          "occurence": {
+            "type": "date"
+          },
+          "@timestamp": {
+            "type": "date"
+          },
+          "externalId": {
+            "type": "keyword"
+          },
+          "sessionId": {
+            "type": "keyword"
+          }
+        }
+      }
+    }
+  }'
+
+# common template 3
+curl -s --insecure -X PUT "$ES_ENDPOINT/_component_template/talsec_app_info" \
+  -H "Authorization: ApiKey $API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "template":{
+      "mappings":{
+         "_routing":{
+            "required":false
+         },
+         "numeric_detection":false,
+         "dynamic_date_formats":[
+            "strict_date_optional_time",
+            "yyyy/MM/dd HH:mm:ss Z||yyyy/MM/dd Z"
+         ],
+         "dynamic":true,
+         "_source":{
+            "excludes":[
+
+            ],
+            "includes":[
+
+            ],
+            "enabled":true
+         },
+         "dynamic_templates":[
+
+         ],
+         "date_detection":true,
+         "properties":{
+            "appInfo":{
+               "type":"object",
+               "properties":{
+                  "appVersion":{
+                     "type":"keyword"
+                  },
+                  "appIdentifier":{
+                     "type":"keyword"
+                  },
+                  "applicationIdentifier":{
+                     "type":"keyword"
+                  }
+               }
+            }
+         }
+      }
+   }
+}'
+
+# common template 3
+curl -s --insecure -X PUT "$ES_ENDPOINT/_component_template/talsec_sdk_info" \
+  -H "Authorization: ApiKey $API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "template":{
+        "mappings":{
+          "properties":{
+              "sdkIdentifier":{
+                "type":"keyword"
+              },
+              "sdkPlatform":{
+                "type":"keyword"
+              },
+              "configVersion":{
+                "type":"keyword"
+              },
+              "sdkVersion":{
+                "type":"keyword"
+              },
+              "dynamicConfigVersion":{
+                "type":"keyword"
+              }
+          }
+        }
+    }
+}'
+
+curl -s --insecure -X PUT "$ES_ENDPOINT/_component_template/talsec_fullrasp" \
+  -H "Authorization: ApiKey $API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "template":{
+      "mappings":{
+         "properties":{
+            "identifiedWith":{
+               "type":"keyword"
+            },
+            "securityWatcherMail":{
+               "type":"keyword"
+            },
+            "securityReportMail":{
+               "type":"keyword"
+            }
+         }
+      }
+   }
+}'
+
+curl -s --insecure -X PUT "$ES_ENDPOINT/_component_template/talsec_incident_info" \
+  -H "Authorization: ApiKey $API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "template":{
+      "mappings":{
+         "properties":{
+            "checks":{
+               "type":"object",
+               "properties":{
+                  "unofficialStore":{
+                     "type":"object",
+                     "properties":{
+                        "status":{
+                           "type":"keyword"
+                        },
+                        "timeMs":{
+                           "type":"long"
+                        }
+                     }
+                  },
+                  "debug":{
+                     "type":"object",
+                     "properties":{
+                        "status":{
+                           "type":"keyword"
+                        },
+                        "timeMs":{
+                           "type":"long"
+                        }
+                     }
+                  },
+                  "simulator":{
+                     "type":"object",
+                     "properties":{
+                        "status":{
+                           "type":"keyword"
+                        },
+                        "timeMs":{
+                           "type":"long"
+                        }
+                     }
+                  },
+                  "privilegedAccess":{
+                     "type":"object",
+                     "properties":{
+                        "status":{
+                           "type":"keyword"
+                        },
+                        "timeMs":{
+                           "type":"long"
+                        }
+                     }
+                  },
+                  "appIntegrity":{
+                     "type":"object",
+                     "properties":{
+                        "status":{
+                           "type":"keyword"
+                        },
+                        "timeMs":{
+                           "type":"long"
+                        }
+                     }
+                  },
+                  "hooks":{
+                     "type":"object",
+                     "properties":{
+                        "status":{
+                           "type":"keyword"
+                        },
+                        "timeMs":{
+                           "type":"long"
+                        }
+                     }
+                  },
+                  "deviceBinding":{
+                     "type":"object",
+                     "properties":{
+                        "status":{
+                           "type":"keyword"
+                        },
+                        "timeMs":{
+                           "type":"long"
+                        }
+                     }
+                  },
+                  "obfuscationIssues":{
+                     "type":"object",
+                     "properties":{
+                        "status":{
+                           "type":"keyword"
+                        },
+                        "timeMs":{
+                           "type":"long"
+                        }
+                     }
+                  },
+                  "systemVPN":{
+                     "type":"object",
+                     "properties":{
+                        "status":{
+                           "type":"keyword"
+                        },
+                        "timeMs":{
+                           "type":"long"
+                        }
+                     }
+                  },
+                  "screenCapture":{
+                     "type":"object",
+                     "properties":{
+                        "status":{
+                           "type":"keyword"
+                        },
+                        "timeMs":{
+                           "type":"long"
+                        }
+                     }
+                  },
+                  "screenshot":{
+                     "type":"object",
+                     "properties":{
+                        "status":{
+                           "type":"keyword"
+                        },
+                        "timeMs":{
+                           "type":"long"
+                        }
+                     }
+                  },
+                  "screenRecording":{
+                     "type":"object",
+                     "properties":{
+                        "status":{
+                           "type":"keyword"
+                        },
+                        "timeMs":{
+                           "type":"long"
+                        }
+                     }
+                  }
+               }
+            },
+            "incidentReport":{
+               "type":"object",
+               "properties":{
+                  "type":{
+                     "type":"keyword"
+                  },
+                  "featureTestingIgnored":{
+                     "type":"object"
+                  },
+                  "info":{
+                     "type":"object",
+                     "properties":{
+                        "sdkIntegrityCompromised":{
+                           "type":"text"
+                        },
+                        "captureType":{
+                           "type":"keyword"
+                        }
+                     }
+                  }
+               }
+            },
+            "type":{
+               "type":"keyword"
+            }
+         }
+      }
+   }
+}'
+
+curl -s --insecure -X PUT "$ES_ENDPOINT/_component_template/talsec_incident_info_screenshot" \
+  -H "Authorization: ApiKey $API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "template":{
+      "mappings":{
+         "properties":{
+            "incidentReport":{
+               "type":"object",
+               "properties":{
+                  "info":{
+                     "type":"object",
+                     "properties":{
+                        "detected":{
+                           "type":"boolean"
+                        }
+                     }
+                  }
+               }
+            }
+         }
+      }
+   }
+}'
+
+curl -s --insecure -X PUT "$ES_ENDPOINT/_component_template/talsec_incident_info_screen_recording" \
+  -H "Authorization: ApiKey $API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "template": {
+      "mappings": {
+        "properties": {
+          "occurence": {
+            "type": "date"
+          },
+          "@timestamp": {
+            "type": "date"
+          },
+          "externalId": {
+            "type": "keyword"
+          },
+          "sessionId": {
+            "type": "keyword"
+          }
+        }
+      }
+    }
+  }'
+
+
 # Dashboard creation section
 echo "Creating default dashboard for $CUSTOMER_NAME..."
 curl -o /tmp/dashboard.ndjson https://raw.githubusercontent.com/h4l0gen/ARM---Infra-deployment/refs/heads/main/linked-templates/dashboard.ndjson
