@@ -238,13 +238,6 @@ DASHBOARD_RESPONSE=$(curl -s -v --insecure -X POST "$KIBANA_URL/api/saved_object
 
 echo "Dashboard import response: $DASHBOARD_RESPONSE"
 
-# Verify dashboard creation
-if echo "$DASHBOARD_RESPONSE" | grep -q "\"success\":true"; then
-  echo "Dashboard created successfully!"
-else
-  echo "Warning: Dashboard creation may have failed"
-fi
-
 #https://github.com/h4l0gen/ARM---Infra-deployment/tree/main/linked-templates
 # Test the endpoints
 echo "Testing Kibana endpoint..."
