@@ -1631,7 +1631,7 @@ curl -s --insecure -X PUT "$ES_ENDPOINT/_component_template/talsec_log_dev_andro
 
 
 # ios Prod index
-curl -s --insecure -X PUT "$ES_ENDPOINT/%3Ctalsec_log_prod_ios_v2_%7Bnow%2Fd%7D-000001%3E" \
+curl -s --insecure -X POST "$ES_ENDPOINT/%3Ctalsec_log_prod_ios_v2_%7Bnow%2Fd%7D-000001%3E" \
   -H "Authorization: ApiKey $API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
@@ -1643,7 +1643,7 @@ curl -s --insecure -X PUT "$ES_ENDPOINT/%3Ctalsec_log_prod_ios_v2_%7Bnow%2Fd%7D-
   }'
 
 # android prod index
-curl -s --insecure -X PUT "$ES_ENDPOINT/%3Ctalsec_log_prod_android_v2_%7Bnow%2Fd%7D-000001%3E" \
+curl -s --insecure -X POST "$ES_ENDPOINT/%3Ctalsec_log_prod_android_v2_%7Bnow%2Fd%7D-000001%3E" \
   -H "Authorization: ApiKey $API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
@@ -1655,7 +1655,7 @@ curl -s --insecure -X PUT "$ES_ENDPOINT/%3Ctalsec_log_prod_android_v2_%7Bnow%2Fd
   }'
 
 # ios dev index
-curl -s --insecure -X PUT "$ES_ENDPOINT/%3Ctalsec_log_dev_ios_v2_%7Bnow%2Fd%7D-000001%3E" \
+curl -s --insecure -X POST "$ES_ENDPOINT/%3Ctalsec_log_dev_ios_v2_%7Bnow%2Fd%7D-000001%3E" \
   -H "Authorization: ApiKey $API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
@@ -1666,7 +1666,7 @@ curl -s --insecure -X PUT "$ES_ENDPOINT/%3Ctalsec_log_dev_ios_v2_%7Bnow%2Fd%7D-0
     }
   }'
 # android dev index
-curl -s --insecure -X PUT "$ES_ENDPOINT/%3Ctalsec_log_dev_android_v2_%7Bnow%2Fd%7D-000001%3E" \
+curl -s --insecure -X POST "$ES_ENDPOINT/%3Ctalsec_log_dev_android_v2_%7Bnow%2Fd%7D-000001%3E" \
   -H "Authorization: ApiKey $API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
@@ -1815,7 +1815,7 @@ curl -s --insecure -X PUT "$ES_ENDPOINT/_ingest/pipeline/talsec_log_index" \
 # Create API key for applications to send logs
 echo "Creating log ingestion API key..."
 LOG_API_KEY_RESPONSE=$(curl -s --insecure -X POST "$ES_ENDPOINT/_security/api_key" \
-  -H "Authorization: ApiKey $API_KEY" \
+  -u "elastic:$ES_PASSWORD" \
   -H "Content-Type: application/json" \
   -d '{
     "name": "talsec_create_doc",
