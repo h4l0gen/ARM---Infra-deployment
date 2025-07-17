@@ -204,10 +204,38 @@ API_KEY_RESPONSE=$(curl -s -k -u elastic:$ES_PASSWORD \
 kill $PF_PID 2>/dev/null || true
 
 API_KEY=$(echo $API_KEY_RESPONSE | jq -r .encoded)
-
 # Prepare outputs
 KIBANA_URL="https://$INGRESS_IP"
 ES_ENDPOINT="https://$INGRESS_IP/elasticsearch"
+
+# Dashboard creation section
+echo "Creating default dashboard for $CUSTOMER_NAME..."
+curl -o /tmp/dashboard-template.ndjson https://raw.githubusercontent.com/h4l0gen/ARM---Infra-deployment/refs/heads/main/linked-templates/dashboard.ndjson
+
+# Replace placeholders in the dashboard
+sed -i "s/\"title\":\"Talsec\"/\"title\":\"$CUSTOMER_NAME Dashboard\"/g" /tmp/dashboard-template.ndjson
+sed -i "s/\"title\":\"s\*\"/\"title\":\"$INDEX_PATTERN\"/g" /tmp/dashboard-template.ndjson
+sed -i "s/\"description\":\"testing\"/\"description\":\"$CUSTOMER_NAME Security Dashboard\"/g" /tmp/dashboard-template.ndjson
+
+echo "Waiting for Kibana to be ready..."
+until curl -s -k "$KIBANA_URL/api/status" | grep -q "\"state\":\"green\""; do
+  sleep 5
+done
+
+# Import dashboard using API key
+DASHBOARD_RESPONSE=$(curl -s -k -X POST "$KIBANA_URL/api/saved_objects/_import?overwrite=true" \
+  -H "kbn-xsrf: true" \
+  -H "Authorization: ApiKey $API_KEY" \
+  -F "file=@/tmp/dashboard-template.ndjson")
+
+echo "Dashboard import response: $DASHBOARD_RESPONSE"
+
+# Verify dashboard creation
+if echo "$DASHBOARD_RESPONSE" | grep -q "\"success\":true"; then
+  echo "Dashboard created successfully!"
+else
+  echo "Warning: Dashboard creation may have failed"
+fi
 
 # Test the endpoints
 echo "Testing Kibana endpoint..."
