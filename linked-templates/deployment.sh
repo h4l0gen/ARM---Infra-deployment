@@ -210,12 +210,12 @@ ES_ENDPOINT="https://$INGRESS_IP/elasticsearch"
 
 # Dashboard creation section
 echo "Creating default dashboard for $CUSTOMER_NAME..."
-curl -o /tmp/dashboard.ndjson https://raw.githubusercontent.com/h4l0gen/ARM---Infra-deployment/refs/heads/main/linked-templates/dashboard.ndjson
+curl -o /tmp/martin_ds.ndjson https://raw.githubusercontent.com/h4l0gen/ARM---Infra-deployment/refs/heads/main/linked-templates/martin_ds.ndjson
 
 # Replace placeholders in the dashboard
-sed -i "s/\"title\":\"Talsec\"/\"title\":\"$CUSTOMER_NAME Dashboard\"/g" /tmp/dashboard.ndjson
-sed -i "s/\"title\":\"s\*\"/\"title\":\"$INDEX_PATTERN\"/g" /tmp/dashboard.ndjson
-sed -i "s/\"description\":\"testing\"/\"description\":\"$CUSTOMER_NAME Security Dashboard\"/g" /tmp/dashboard.ndjson
+sed -i "s/\"title\":\"Talsec\"/\"title\":\"$CUSTOMER_NAME Dashboard\"/g" /tmp/martin_ds.ndjson
+sed -i "s/\"title\":\"s\*\"/\"title\":\"$INDEX_PATTERN\"/g" /tmp/marting_ds.ndjson
+sed -i "s/\"description\":\"testing\"/\"description\":\"$CUSTOMER_NAME Security Dashboard\"/g" /tmp/martin_ds.ndjson
 
 echo "Waiting for Kibana to be ready..."
 TIMEOUT=300  # 5 minutes
@@ -234,7 +234,7 @@ fi
 DASHBOARD_RESPONSE=$(curl -s -v --insecure -X POST "$KIBANA_URL/api/saved_objects/_import?overwrite=true" \
   -H "kbn-xsrf: true" \
   -H "Authorization: ApiKey $API_KEY" \
-  -F "file=@/tmp/dashboard.ndjson")
+  -F "file=@/tmp/martin_ds.ndjson")
 
 echo "Dashboard import response: $DASHBOARD_RESPONSE"
 
