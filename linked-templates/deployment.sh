@@ -231,7 +231,7 @@ if [ $ELAPSED -ge $TIMEOUT ]; then
 fi
 
 # Import dashboard using API key
-DASHBOARD_RESPONSE=$(curl -s -k -X POST "$KIBANA_URL/api/saved_objects/_import?overwrite=true" \
+DASHBOARD_RESPONSE=$(curl -s -v --insecure -X POST "$KIBANA_URL/api/saved_objects/_import?overwrite=true" \
   -H "kbn-xsrf: true" \
   -H "Authorization: ApiKey $API_KEY" \
   -F "file=@/tmp/dashboard.ndjson")
