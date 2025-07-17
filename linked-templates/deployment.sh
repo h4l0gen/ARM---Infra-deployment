@@ -635,6 +635,1210 @@ curl -s --insecure -X PUT "$ES_ENDPOINT/_component_template/talsec_incident_info
   }'
 
 
+# new from here
+curl -s --insecure -X PUT "$ES_ENDPOINT/_component_template/talsec_metadata" \
+  -H "Authorization: ApiKey $API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "template": {
+      "mappings": {
+        "properties": {
+          "occurence": {
+            "type": "date"
+          },
+          "@timestamp": {
+            "type": "date"
+          },
+          "externalId": {
+            "type": "keyword"
+          },
+          "sessionId": {
+            "type": "keyword"
+          }
+        }
+      }
+    }
+  }'
+
+# Android templates now
+
+curl -s --insecure -X PUT "$ES_ENDPOINT/_component_template/talsec_device_info_android" \
+  -H "Authorization: ApiKey $API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "template":{
+      "mappings":{
+         "properties":{
+            "deviceState":{
+               "type":"object",
+               "properties":{
+                  "hasHuaweiMobileServices":{
+                     "type":"boolean"
+                  },
+                  "securityPatch":{
+                     "type":"date"
+                  },
+                  "isAdbEnabled":{
+                     "type":"keyword"
+                  },
+                  "hasGoogleMobileServices":{
+                     "type":"boolean"
+                  },
+                  "isVerifyAppsEnabled":{
+                     "type":"boolean"
+                  },
+                  "selinuxProperties": {
+                    "type": "object",
+                    "properties": {
+                      "buildSelinuxProperty": {
+                        "type": "keyword"
+                      },
+                      "selinuxMode": {
+                        "type": "keyword"
+                      },
+                      "bootSelinuxProperty": {
+                        "type": "keyword"
+                      },
+                      "selinuxEnforcementFileContent": {
+                        "type": "keyword"
+                      },
+                      "selinuxEnabledReflect": {
+                        "type": "keyword"
+                      },
+                      "selinuxEnforcedReflect": {
+                        "type": "keyword"
+                      }
+                    }
+                  }
+               }
+            },
+            "deviceId":{
+               "type":"object",
+               "properties":{
+                  "mediaDrm":{
+                     "type":"keyword"
+                  },
+                  "fingerprintV3":{
+                     "type":"keyword"
+                  },
+                  "androidId":{
+                     "type":"keyword"
+                  }
+               }
+            }
+         }
+      }
+   }
+}'
+
+
+curl -s --insecure -X PUT "$ES_ENDPOINT/_component_template/talsec_app_info_android" \
+  -H "Authorization: ApiKey $API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "template":{
+      "mappings":{
+         "properties":{
+            "appInfo":{
+               "type":"object",
+               "properties":{
+                  "alternativeCertHashes":{
+                     "type":"keyword"
+                  },
+                  "certHash":{
+                     "type":"keyword"
+                  },
+                  "installationSource":{
+                     "type":"keyword"
+                  },
+                  "installedFromUnofficialStore":{
+                     "type":"keyword"
+                  }
+               }
+            },
+            "accessibilityApps":{
+               "type":"keyword"
+            }
+         }
+      }
+   }
+}'
+
+curl -s --insecure -X PUT "$ES_ENDPOINT/_component_template/talsec_sdk_state_android" \
+  -H "Authorization: ApiKey $API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "template":{
+      "mappings":{
+         "properties":{
+            "sdkState":{
+               "type":"object",
+               "properties":{
+                  "beatExecutionState":{
+                     "type":"keyword"
+                  },
+                  "controlExecutionState":{
+                     "type":"keyword"
+                  }
+               }
+            }
+         }
+      }
+   }
+}'
+
+curl -s --insecure -X PUT "$ES_ENDPOINT/_component_template/talsec_incident_info_android" \
+  -H "Authorization: ApiKey $API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "template":{
+      "mappings":{
+         "properties":{
+            "checks":{
+               "type":"object",
+               "properties":{
+                  "overlay":{
+                     "type":"object",
+                     "properties":{
+                        "status":{
+                           "type":"keyword"
+                        }
+                     }
+                  },
+                  "accessibility":{
+                     "type":"object",
+                     "properties":{
+                        "status":{
+                           "type":"keyword"
+                        }
+                     }
+                  },
+                  "devMode":{
+                     "type":"object",
+                     "properties":{
+                        "status":{
+                           "type":"keyword"
+                        },
+                        "timeMs":{
+                           "type":"long"
+                        }
+                     }
+                  },
+                  "malware":{
+                     "type":"object",
+                     "properties":{
+                        "status":{
+                           "type":"keyword"
+                        },
+                        "timeMs":{
+                           "type":"long"
+                        }
+                     }
+                  },
+                  "adbEnabled":{
+                     "type":"object",
+                     "properties":{
+                        "status":{
+                           "type":"keyword"
+                        },
+                        "timeMs":{
+                           "type":"long"
+                        }
+                     }
+                  }
+               }
+            }
+         }
+      }
+   }
+}'
+
+curl -s --insecure -X PUT "$ES_ENDPOINT/_component_template/talsec_incident_info_privileged_access_android" \
+  -H "Authorization: ApiKey $API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "template":{
+      "mappings":{
+         "properties":{
+            "incidentReport":{
+               "type":"object",
+               "properties":{
+                  "featureTestingIgnored":{
+                     "type": "object",
+                     "properties":{
+                         "isRunningSuProcessesPS":{
+                            "type": "keyword"
+                         },
+                         "hasMagiskMountPaths":{
+                            "type": "keyword"
+                         },
+                         "isRunningSuProcessesStatsManager":{
+                            "type": "keyword"
+                         },
+                         "isSuOnPath":{
+                            "type": "keyword"
+                         },
+                         "hasRootingPackagesInstalled":{
+                            "type": "keyword"
+                         },
+                         "hasMagiskStub":{
+                            "type": "keyword"
+                         },
+                         "isRunningSuProcessesActivityManager":{
+                            "type": "keyword"
+                         }
+                     }
+                  },
+                  "info":{
+                     "type":"object",
+                     "properties":{
+                        "hasMagiskStub":{
+                            "type": "keyword"
+                         },
+                        "isSystemPropertyEqualTo":{
+                           "type":"keyword"
+                        },
+                        "areFilesPresent":{
+                           "type":"keyword"
+                        },
+                        "rootNative":{
+                           "type":"keyword"
+                        },
+                        "isSuOnPath":{
+                           "type":"keyword"
+                        },
+                        "isSElinuxInPermisiveMode":{
+                           "type":"keyword"
+                        },
+                        "isRunningSuProcessesPS":{
+                           "type":"keyword"
+                        },
+                        "areFoldersWritable":{
+                           "type":"keyword"
+                        },
+                        "isRunningSuProcessesStatsManager":{
+                           "type":"keyword"
+                        },
+                        "areTestKeysEnabled":{
+                           "type":"keyword"
+                        },
+                        "areBinariesPresent":{
+                           "type":"keyword"
+                        },
+                        "isOtaCertificateMissing":{
+                           "type":"keyword"
+                        },
+                        "isSafetyNetBypassDetected":{
+                           "type":"boolean"
+                        },
+                        "canExecuteCommandUsingWhich":{
+                           "type":"keyword"
+                        },
+                        "checkPropertyDebuggable":{
+                           "type":"keyword"
+                        },
+                        "canExecuteCommand":{
+                           "type":"keyword"
+                        },
+                        "hasRootingPackagesInstalled":{
+                           "type":"keyword"
+                        },
+                        "areApksAvailable":{
+                           "type":"keyword"
+                        },
+                        "isRunningSuProcessesActivityManager":{
+                           "type":"keyword"
+                        },
+                        "hasFeatureTestingData": {
+                           "type":"boolean"
+                        },
+                        "shamikoHiderNative":{
+                            "type": "boolean"
+                         }
+                     }
+                  }
+               }
+            }
+         }
+      }
+   }
+}'
+
+curl -s --insecure -X PUT "$ES_ENDPOINT/_component_template/talsec_incident_info_app_integrity_android" \
+  -H "Authorization: ApiKey $API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "template":{
+      "mappings":{
+         "properties":{
+            "incidentReport":{
+               "type":"object",
+               "properties":{
+                  "featureTestingIgnored": {
+                    "type": "object",
+                    "properties": {
+                      "appIntegrityCheckError": {
+                        "type": "keyword"
+                      },
+                      "invalidSignatureDigestList": {
+                        "type": "keyword"
+                      },
+                      "invalidCertificateInfoList": {
+                        "type": "object",
+                        "properties": {
+                          "serial": {
+                            "type": "keyword"
+                          },
+                          "subject": {
+                            "type": "keyword"
+                          },
+                          "subjectAlternativeNames": {
+                            "type": "keyword"
+                          },
+                          "issuerAlternativeNames": {
+                            "type": "keyword"
+                          },
+                          "issuer": {
+                            "type": "keyword"
+                          }
+                        }
+                      }
+                    }
+                  },
+                  "info":{
+                     "type":"object",
+                     "properties":{
+                        "appIntegrityCheckError": {
+                          "type": "keyword"
+                        },
+                        "hasMultipleSignatures": {
+                          "type": "keyword"
+                        },
+                        "hasInvalidSignatureDigest":{
+                           "type":"keyword"
+                        },
+                        "certificateInfo":{
+                           "type":"object",
+                           "properties":{
+                              "serial":{
+                                 "type":"keyword"
+                              },
+                              "subject":{
+                                 "type":"text"
+                              },
+                              "subjectAlternativeNames":{
+                                 "type":"text"
+                              },
+                              "issuerAlternativeNames":{
+                                 "type":"text"
+                              },
+                              "issuer":{
+                                 "type":"text"
+                              }
+                           }
+                        },
+                        "incorrectPackageName":{
+                           "type":"keyword"
+                        },
+                        "incorrectPackageNameNative":{
+                           "type":"keyword"
+                        },
+                        "hasInvalidSignatureDigestNative":{
+                           "type":"keyword"
+                        }
+                     }
+                  }
+               }
+            }
+         }
+      }
+   }
+}'
+
+curl -s --insecure -X PUT "$ES_ENDPOINT/_component_template/talsec_incident_info_missing_obfuscation_android" \
+  -H "Authorization: ApiKey $API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "template":{
+      "mappings":{
+         "properties":{
+            "incidentReport":{
+               "type":"object",
+               "properties":{
+                  "info":{
+                     "type":"object",
+                     "properties":{
+                        "apiMethodNameNotObfuscated":{
+                           "type":"keyword"
+                        }
+                     }
+                  }
+               }
+            }
+         }
+      }
+   }
+}'
+
+curl -s --insecure -X PUT "$ES_ENDPOINT/_component_template/talsec_incident_info_hooks_android" \
+  -H "Authorization: ApiKey $API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "template":{
+      "mappings":{
+         "properties":{
+            "incidentReport":{
+               "type":"object",
+               "properties":{
+                  "info":{
+                     "type":"object",
+                     "properties":{
+                        "areFridaLibrariesDetected":{
+                           "type":"keyword"
+                        },
+                        "isXposedVersionAvailable":{
+                           "type":"keyword"
+                        },
+                        "checkStackTrace":{
+                           "type":"keyword"
+                        },
+                        "checkNativeMethods":{
+                           "type":"keyword"
+                        },
+                        "isFridaProcessInProc":{
+                           "type":"keyword"
+                        },
+                        "isFridaServerListening":{
+                           "type":"keyword"
+                        },
+                        "checkFrameworks":{
+                           "type":"keyword"
+                        },
+                        "fridaNative":{
+                           "type":"keyword"
+                        },
+                        "detectSharedObjsAndJarsLoadedInMemory":{
+                           "type":"keyword"
+                        }
+                     }
+                  }
+               }
+            }
+         }
+      }
+   }
+}'
+
+curl -s --insecure -X PUT "$ES_ENDPOINT/_component_template/talsec_incident_info_debug_android" \
+  -H "Authorization: ApiKey $API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "template":{
+      "mappings":{
+         "properties":{
+            "incidentReport":{
+               "type":"object",
+               "properties":{
+                  "info":{
+                     "type":"object",
+                     "properties":{
+                        "isDebuggerConnected":{
+                           "type":"keyword"
+                        },
+                        "isBuildConfigDebug":{
+                           "type":"keyword"
+                        },
+                        "isApplicationFlagEnabled":{
+                           "type":"keyword"
+                        },
+                        "hasTracerPid":{
+                           "type":"keyword"
+                        }
+                     }
+                  }
+               }
+            }
+         }
+      }
+   }
+}'
+
+curl -s --insecure -X PUT "$ES_ENDPOINT/_component_template/talsec_incident_info_simulator_android" \
+  -H "Authorization: ApiKey $API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "template":{
+      "mappings":{
+         "properties":{
+            "incidentReport":{
+               "type":"object",
+               "properties":{
+                  "info":{
+                     "type":"object",
+                     "properties":{
+                        "checkEmulatorProduct":{
+                           "type":"keyword"
+                        },
+                        "checkPropertyWhichIsOnlyOnEmulator":{
+                           "type":"keyword"
+                        },
+                        "checkVoiceMailNumber":{
+                           "type":"keyword"
+                        },
+                        "checkEmulatorDevice":{
+                           "type":"keyword"
+                        },
+                        "checkEmulatorPropertyValues":{
+                           "type":"keyword"
+                        },
+                        "checkSubsriberId":{
+                           "type":"keyword"
+                        },
+                        "checkEmulatorManufacturer":{
+                           "type":"keyword"
+                        },
+                        "checkEmulatorBrand":{
+                           "type":"keyword"
+                        },
+                        "checkSimSerial":{
+                           "type":"keyword"
+                        },
+                        "fakeDeviceProfile":{
+                           "type":"object",
+                           "properties":{
+                              "cpuAbi":{
+                                 "type":"keyword"
+                              },
+                              "product":{
+                                 "type":"keyword"
+                              },
+                              "release":{
+                                 "type":"keyword"
+                              },
+                              "cpuVendor":{
+                                 "type":"keyword"
+                              },
+                              "model":{
+                                 "type":"keyword"
+                              },
+                              "device":{
+                                 "type":"keyword"
+                              },
+                              "board":{
+                                 "type":"keyword"
+                              },
+                              "hardware":{
+                                 "type":"keyword"
+                              }
+                           }
+                        },
+                        "checkEmulatorUser":{
+                           "type":"keyword"
+                        },
+                        "checkEmulatorModel":{
+                           "type":"keyword"
+                        },
+                        "checkLine1Number":{
+                           "type":"keyword"
+                        },
+                        "checkEmulatorHardware":{
+                           "type":"keyword"
+                        },
+                        "checkEmulatorFingerprint":{
+                           "type":"keyword"
+                        }
+                     }
+                  }
+               }
+            }
+         }
+      }
+   }
+}'
+
+curl -s --insecure -X PUT "$ES_ENDPOINT/_component_template/talsec_incident_info_overlay_android" \
+  -H "Authorization: ApiKey $API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "template":{
+      "mappings":{
+         "properties":{
+            "incidentReport":{
+               "type":"object",
+               "properties":{
+                  "info":{
+                     "type":"object",
+                     "properties":{
+                        "isObscuredMotionEvent":{
+                           "type":"keyword"
+                        },
+                        "overlayInstalledApps":{
+                           "type":"keyword"
+                        }
+                     }
+                  }
+               }
+            }
+         }
+      }
+   }
+}'
+
+curl -s --insecure -X PUT "$ES_ENDPOINT/_component_template/talsec_incident_info_accessibility_android" \
+  -H "Authorization: ApiKey $API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "template":{
+      "mappings":{
+         "properties":{
+            "incidentReport":{
+               "type":"object",
+               "properties":{
+                  "info":{
+                     "type":"object",
+                     "properties":{
+                        "unknownServices":{
+                           "type":"keyword"
+                        }
+                     }
+                  }
+               }
+            },
+            "accessibilityApps":{
+               "type":"keyword"
+            }
+         }
+      }
+   }
+}'
+
+curl -s --insecure -X PUT "$ES_ENDPOINT/_component_template/talsec_incident_info_unofficial_store_android" \
+  -H "Authorization: ApiKey $API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "template":{
+      "mappings":{
+         "properties":{
+            "incidentReport":{
+               "type":"object",
+               "properties":{
+                  "info":{
+                     "type":"object",
+                     "properties":{
+                        "unofficialInstallationSourceNative":{
+                           "type":"keyword"
+                        },
+                        "unofficialInstallationSource":{
+                           "type":"keyword"
+                        }
+                     }
+                  }
+               }
+            }
+         }
+      }
+   }
+}'
+
+curl -s --insecure -X PUT "$ES_ENDPOINT/_component_template/talsec_incident_info_device_binding_android" \
+  -H "Authorization: ApiKey $API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "template":{
+      "mappings":{
+         "properties":{
+            "incidentReport":{
+               "type":"object",
+               "properties":{
+                  "info":{
+                     "type":"object",
+                     "properties":{
+                        "didKeyStoreChange":{
+                           "type":"keyword"
+                        },
+                        "didAndroidIdChange":{
+                           "type":"keyword"
+                        }
+                     }
+                  }
+               }
+            }
+         }
+      }
+   }
+}'
+
+curl -s --insecure -X PUT "$ES_ENDPOINT/_component_template/talsec_incident_info_devmode_android" \
+  -H "Authorization: ApiKey $API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "template":{
+      "mappings":{
+         "properties":{
+            "incidentReport":{
+               "type":"object",
+               "properties":{
+                  "info":{
+                     "type":"object",
+                     "properties":{
+                        "isDeveloperModeEnabled":{
+                           "type":"keyword"
+                        }
+                     }
+                  }
+               }
+            }
+         }
+      }
+   }
+}'
+
+curl -s --insecure -X PUT "$ES_ENDPOINT/_component_template/talsec_incident_info_systemvpn_android" \
+  -H "Authorization: ApiKey $API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "template":{
+      "mappings":{
+         "properties":{
+            "incidentReport":{
+               "type":"object",
+               "properties":{
+                  "info":{
+                     "type":"object",
+                     "properties":{
+                        "isVpnRunning":{
+                           "type":"keyword"
+                        }
+                     }
+                  }
+               }
+            }
+         }
+      }
+   }
+}'
+
+curl -s --insecure -X PUT "$ES_ENDPOINT/_component_template/talsec_incident_info_monitoring_android" \
+  -H "Authorization: ApiKey $API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "template":{
+      "mappings":{
+         "properties":{
+            "incidentReport":{
+               "type":"object",
+               "properties":{
+                  "info":{
+                     "type":"object",
+                     "properties":{
+                        "componentHeartbeat":{
+                           "type":"keyword"
+                        },
+                        "executionState":{
+                           "type":"keyword"
+                        }
+                     }
+                  }
+               }
+            }
+         }
+      }
+   }
+}'
+
+curl -s --insecure -X PUT "$ES_ENDPOINT/_component_template/talsec_incident_info_malware_android" \
+  -H "Authorization: ApiKey $API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "template":{
+      "mappings":{
+         "properties":{
+            "incidentReport":{
+               "type":"object",
+               "properties":{
+                  "info":{
+                     "type":"object",
+                     "properties":{
+                        "malwarePackages":{
+                           "type":"object",
+                           "properties": {
+                              "malwareHashBlacklist": {
+                                "type": "keyword"
+                              },
+                              "suspiciousInstallationSource": {
+                                "type": "keyword"
+                              },
+                              "suspiciousPermissionGranted": {
+                                "type": "keyword"
+                              },
+                              "malwarePackageNameBlacklist": {
+                                "type": "keyword"
+                              }
+                           }
+                        }
+                     }
+                  }
+               }
+            }
+         }
+      }
+   }
+}'
+
+curl -s --insecure -X PUT "$ES_ENDPOINT/_component_template/talsec_mtalsec_incident_info_adb_enabled_androidetadata" \
+  -H "Authorization: ApiKey $API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "template":{
+      "mappings":{
+         "properties":{
+            "incidentReport":{
+               "type":"object",
+               "properties":{
+                  "info":{
+                     "type":"object",
+                     "properties":{
+                        "isAdbEnabled":{
+                           "type":"boolean"
+                        }
+                     }
+                  }
+               }
+            }
+         }
+      }
+   }
+}'
+
+curl -s --insecure -X PUT "$ES_ENDPOINT/_component_template/talsec_log_android_v2" \
+  -H "Authorization: ApiKey $API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "index_patterns":[
+      "talsec_log_prod_android_v2_2*"
+   ],
+   "template":{
+      "settings":{
+         "index":{
+            "lifecycle":{
+               "name":"talsec_prod_policy",
+               "rollover_alias":"talsec_log_prod_android_write"
+            },
+            "number_of_replicas":"1",
+            "refresh_interval":"10s"
+         }
+      },
+      "aliases":{
+         "talsec_log_android":{
+
+         },
+         "talsec_log_prod":{
+
+         }
+      }
+   },
+   "composed_of":[
+      "talsec_app_info_android",
+      "talsec_device_info_android",
+      "talsec_sdk_state_android",
+      "talsec_incident_info_accessibility_android",
+      "talsec_incident_info_android",
+      "talsec_incident_info_app_integrity_android",
+      "talsec_incident_info_debug_android",
+      "talsec_incident_info_device_binding_android",
+      "talsec_incident_info_hooks_android",
+      "talsec_incident_info_overlay_android",
+      "talsec_incident_info_privileged_access_android",
+      "talsec_incident_info_simulator_android",
+      "talsec_incident_info_unofficial_store_android",
+      "talsec_incident_info_missing_obfuscation_android",
+      "talsec_incident_info_devmode_android",
+      "talsec_incident_info_systemvpn_android",
+      "talsec_incident_info_monitoring_android",
+      "talsec_incident_info_malware_android",
+      "talsec_incident_info_adb_enabled_android",
+      "talsec_incident_info_screenshot",
+      "talsec_incident_info_screen_recording",
+      "talsec_app_info",
+      "talsec_device_info",
+      "talsec_fullrasp",
+      "talsec_incident_info",
+      "talsec_metadata",
+      "talsec_sdk_info"
+   ]
+}'
+
+curl -s --insecure -X PUT "$ES_ENDPOINT/_component_template/talsec_log_dev_android_v2" \
+  -H "Authorization: ApiKey $API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "index_patterns":[
+      "talsec_log_dev_android_v2_2*"
+   ],
+   "template":{
+      "settings":{
+         "index":{
+            "lifecycle":{
+               "name":"talsec_dev_policy",
+               "rollover_alias":"talsec_log_dev_android_write"
+            },
+            "number_of_replicas":"1",
+            "refresh_interval":"10s"
+         }
+      },
+      "aliases":{
+         "talsec_log_android":{
+
+         },
+         "talsec_log_dev":{
+
+         }
+      }
+   },
+   "composed_of":[
+      "talsec_app_info_android",
+      "talsec_device_info_android",
+      "talsec_sdk_state_android",
+      "talsec_incident_info_accessibility_android",
+      "talsec_incident_info_android",
+      "talsec_incident_info_app_integrity_android",
+      "talsec_incident_info_debug_android",
+      "talsec_incident_info_device_binding_android",
+      "talsec_incident_info_hooks_android",
+      "talsec_incident_info_overlay_android",
+      "talsec_incident_info_privileged_access_android",
+      "talsec_incident_info_simulator_android",
+      "talsec_incident_info_unofficial_store_android",
+      "talsec_incident_info_missing_obfuscation_android",
+      "talsec_incident_info_devmode_android",
+      "talsec_incident_info_systemvpn_android",
+      "talsec_incident_info_monitoring_android",
+      "talsec_incident_info_malware_android",
+      "talsec_incident_info_adb_enabled_android",
+      "talsec_incident_info_screenshot",
+      "talsec_incident_info_screen_recording",
+      "talsec_app_info",
+      "talsec_device_info",
+      "talsec_fullrasp",
+      "talsec_incident_info",
+      "talsec_metadata",
+      "talsec_sdk_info"
+   ]
+}'
+
+###### IOS starts from here
+
+
+
+# ios Prod index
+curl -s --insecure -X PUT "$ES_ENDPOINT/%3Ctalsec_log_prod_ios_v2_%7Bnow%2Fd%7D-000001%3E" \
+  -H "Authorization: ApiKey $API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "aliases": {
+      "talsec_log_prod_ios_write": {
+        "is_write_index": true
+      }
+    }
+  }'
+
+# android prod index
+curl -s --insecure -X PUT "$ES_ENDPOINT/%3Ctalsec_log_prod_android_v2_%7Bnow%2Fd%7D-000001%3E" \
+  -H "Authorization: ApiKey $API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "aliases": {
+      "talsec_log_prod_android_write": {
+        "is_write_index": true
+      }
+    }
+  }'
+
+# ios dev index
+curl -s --insecure -X PUT "$ES_ENDPOINT/%3Ctalsec_log_dev_ios_v2_%7Bnow%2Fd%7D-000001%3E" \
+  -H "Authorization: ApiKey $API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "aliases": {
+      "talsec_log_dev_ios_write": {
+        "is_write_index": true
+      }
+    }
+  }'
+# android dev index
+curl -s --insecure -X PUT "$ES_ENDPOINT/%3Ctalsec_log_dev_android_v2_%7Bnow%2Fd%7D-000001%3E" \
+  -H "Authorization: ApiKey $API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "aliases": {
+      "talsec_log_dev_android_write": {
+        "is_write_index": true
+      }
+    }
+  }'
+
+## API key is left here, cause its causing error in notebook itself
+
+
+# Pipelines
+curl -s --insecure -X PUT "$ES_ENDPOINT/_ingest/pipeline/talsec_log_set_session" \
+  -H "Authorization: ApiKey $API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "processors": [
+      {
+        "set": {
+          "field": "@relation.name",
+          "value": "message",
+          "override": false
+        }
+      },
+      {
+        "set": {
+          "field": "@relation.parent",
+          "value": "apps_{{instanceId}}:{{sessionStart}}",
+          "override": false
+        }
+      },
+      {
+        "set": {
+          "field": "_routing",
+          "value": "apps_{{instanceId}}:{{sessionStart}}",
+          "override": false
+        }
+      }
+    ]
+  }'
+
+curl -s --insecure -X PUT "$ES_ENDPOINT/_ingest/pipeline/set_timestamp" \
+  -H "Authorization: ApiKey $API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "processors": [
+      {
+        "set": {
+          "field": "@timestamp",
+          "value": "{{_ingest.timestamp}}",
+          "override": false
+        }
+      }
+    ]
+  }'
+
+curl -s --insecure -X PUT "$ES_ENDPOINT/_ingest/pipeline/talsec_log_set_type" \
+  -H "Authorization: ApiKey $API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "processors" : [
+      {
+        "set" : {
+          "if" : "ctx.incidentReport == null",
+          "field" : "type",
+          "value" : "INFO"
+        }
+      },
+      {
+        "set" : {
+          "if" : "ctx.incidentReport != null",
+          "field" : "type",
+          "value" : "ERROR"
+        }
+      }
+    ]
+  }'
+
+curl -s --insecure -X PUT "$ES_ENDPOINT/_ingest/pipeline/talsec_log_deviceId" \
+  -H "Authorization: ApiKey $API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "processors": [
+      {
+        "set": {
+          "field": "defaultDeviceId",
+          "value": "{{{deviceId.androidId}}}",
+          "if": "ctx.deviceId != null && ctx.deviceId.androidId != null"
+        }
+      },
+      {
+        "set": {
+          "field": "defaultDeviceId",
+          "value": "{{{deviceId.currentVendorId}}}",
+          "if": "ctx.deviceId != null && ctx.deviceId.currentVendorId != null"
+        }
+      },
+      {
+        "set": {
+          "field": "defaultDeviceId",
+          "value": "{{{instanceId}}}",
+          "if": "ctx.defaultDeviceId == null && ctx.instanceId != null"
+        }
+      },
+      {
+        "set": {
+          "field": "defaultDeviceId",
+          "value": "unknown",
+          "if": "ctx.defaultDeviceId == null"
+        }
+      }
+    ]
+  }'
+
+curl -s --insecure -X PUT "$ES_ENDPOINT/_ingest/pipeline/talsec_log_index" \
+  -H "Authorization: ApiKey $API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "processors": [
+        {
+          "pipeline": {
+            "name": "set_timestamp"
+          }
+        },
+        {
+          "pipeline": {
+            "name": "talsec_log_set_type"
+          }
+        },
+        {
+          "pipeline": {
+            "name": "talsec_log_deviceId"
+          }
+        },
+        {
+          "pipeline": {
+            "name": "talsec_log_set_session",
+            "if": "ctx.sessionStart != null"
+          }
+        }
+      ]
+    }'
+
+# Create API key for applications to send logs
+echo "Creating log ingestion API key..."
+LOG_API_KEY_RESPONSE=$(curl -s --insecure -X POST "$ES_ENDPOINT/_security/api_key" \
+  -H "Authorization: ApiKey $API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "talsec_create_doc",
+    "role_descriptors": {
+      "talsec_create_doc": {
+        "cluster": [],
+        "indices": [
+          {
+            "names": ["talsec_log_*"],
+            "privileges": ["create_doc"]
+          }
+        ]
+      }
+    }
+  }')
+
+# Extract the encoded key (this is what customers will use)
+LOG_API_KEY_ENCODED=$(echo $LOG_API_KEY_RESPONSE | jq -r .encoded)
+echo "Log API Key Response: $LOG_API_KEY_RESPONSE"
+echo "Encoded key for applications: $LOG_API_KEY_ENCODED"
+
+
+
 # Dashboard creation section
 echo "Creating default dashboard for $CUSTOMER_NAME..."
 curl -o /tmp/dashboard.ndjson https://raw.githubusercontent.com/h4l0gen/ARM---Infra-deployment/refs/heads/main/linked-templates/dashboard.ndjson
@@ -688,7 +1892,8 @@ cat > $AZ_SCRIPTS_OUTPUT_PATH <<EOF
   "kibanaUrl": "$KIBANA_URL",
   "elasticsearchEndpoint": "$ES_ENDPOINT",
   "apiKey": "$API_KEY",
-  "elasticPassword": "$ES_PASSWORD"
+  "elasticPassword": "$ES_PASSWORD",
+  "logAPIKey": "$LOG_API_KEY_ENCODED"
 }
 EOF
 
