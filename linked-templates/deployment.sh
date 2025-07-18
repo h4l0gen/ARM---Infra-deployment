@@ -634,32 +634,6 @@ curl -s --insecure -X PUT "$ES_ENDPOINT/_component_template/talsec_incident_info
     }
   }'
 
-
-# new from here
-curl -s --insecure -X PUT "$ES_ENDPOINT/_component_template/talsec_metadata" \
-  -H "Authorization: ApiKey $API_KEY" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "template": {
-      "mappings": {
-        "properties": {
-          "occurence": {
-            "type": "date"
-          },
-          "@timestamp": {
-            "type": "date"
-          },
-          "externalId": {
-            "type": "keyword"
-          },
-          "sessionId": {
-            "type": "keyword"
-          }
-        }
-      }
-    }
-  }'
-
 # Android templates now
 
 curl -s --insecure -X PUT "$ES_ENDPOINT/_component_template/talsec_device_info_android" \
@@ -1485,7 +1459,7 @@ curl -s --insecure -X PUT "$ES_ENDPOINT/_component_template/talsec_incident_info
    }
 }'
 
-curl -s --insecure -X PUT "$ES_ENDPOINT/_component_template/talsec_mtalsec_incident_info_adb_enabled_androidetadata" \
+curl -s --insecure -X PUT "$ES_ENDPOINT/_component_template/talsec_incident_info_adb_enabled_android" \
   -H "Authorization: ApiKey $API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
@@ -1627,12 +1601,37 @@ curl -s --insecure -X PUT "$ES_ENDPOINT/_index_template/talsec_log_dev_android_v
 }'
 
 ###### IOS starts from here
+# curl -s --insecure -X PUT "$ES_ENDPOINT/_component_template/talsec_metadata" \
+#   -H "Authorization: ApiKey $API_KEY" \
+#   -H "Content-Type: application/json" \
+#   -d '{
+#     "template": {
+#       "mappings": {
+#         "properties": {
+#           "occurence": {
+#             "type": "date"
+#           },
+#           "@timestamp": {
+#             "type": "date"
+#           },
+#           "externalId": {
+#             "type": "keyword"
+#           },
+#           "sessionId": {
+#             "type": "keyword"
+#           }
+#         }
+#       }
+#     }
+#   }'
 
-#simplet index creation for testing
-curl -s --insecure -X PUT "$ES_ENDPOINT/test-index-simple" \
-  -H "Authorization: ApiKey $API_KEY" \
-  -H "Content-Type: application/json" \
-  -d '{}'
+
+
+# #simplet index creation for testing
+# curl -s --insecure -X PUT "$ES_ENDPOINT/test-index-simple" \
+#   -H "Authorization: ApiKey $API_KEY" \
+#   -H "Content-Type: application/json" \
+#   -d '{}'
 
 
 # ios Prod index
@@ -1659,7 +1658,7 @@ curl -s --insecure -X PUT "$ES_ENDPOINT/talsec_log_prod_ios_v2_${TODAY}-000001" 
   }'
 
 # android prod index
-curl -s --insecure -X POST "$ES_ENDPOINT/talsec_log_prod_android_v2_${TODAY}-000001" \
+curl -s --insecure -X PUT "$ES_ENDPOINT/talsec_log_prod_android_v2_${TODAY}-000001" \
   -H "Authorization: ApiKey $API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
@@ -1671,7 +1670,7 @@ curl -s --insecure -X POST "$ES_ENDPOINT/talsec_log_prod_android_v2_${TODAY}-000
   }'
 
 # ios dev index
-curl -s --insecure -X POST "$ES_ENDPOINT/talsec_log_dev_ios_v2_${TODAY}-000001" \
+curl -s --insecure -X PUT "$ES_ENDPOINT/talsec_log_dev_ios_v2_${TODAY}-000001" \
   -H "Authorization: ApiKey $API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
@@ -1682,7 +1681,7 @@ curl -s --insecure -X POST "$ES_ENDPOINT/talsec_log_dev_ios_v2_${TODAY}-000001" 
     }
   }'
 # android dev index
-curl -s --insecure -X POST "$ES_ENDPOINT/talsec_log_dev_android_v2_${TODAY}-000001" \
+curl -s --insecure -X PUT "$ES_ENDPOINT/talsec_log_dev_android_v2_${TODAY}-000001" \
   -H "Authorization: ApiKey $API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
