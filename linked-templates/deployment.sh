@@ -1601,31 +1601,422 @@ curl -s --insecure -X PUT "$ES_ENDPOINT/_index_template/talsec_log_dev_android_v
 }'
 
 ###### IOS starts from here
-# curl -s --insecure -X PUT "$ES_ENDPOINT/_component_template/talsec_metadata" \
-#   -H "Authorization: ApiKey $API_KEY" \
-#   -H "Content-Type: application/json" \
-#   -d '{
-#     "template": {
-#       "mappings": {
-#         "properties": {
-#           "occurence": {
-#             "type": "date"
-#           },
-#           "@timestamp": {
-#             "type": "date"
-#           },
-#           "externalId": {
-#             "type": "keyword"
-#           },
-#           "sessionId": {
-#             "type": "keyword"
-#           }
-#         }
-#       }
-#     }
-#   }'
+curl -s --insecure -X PUT "$ES_ENDPOINT/_component_template/talsec_device_info_ios" \
+  -H "Authorization: ApiKey $API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "template":{
+      "mappings":{
+         "properties":{
+            "deviceId":{
+               "type":"object",
+               "properties":{
+                  "currentVendorId":{
+                     "type":"keyword"
+                  },
+                  "oldVendorId":{
+                     "type":"keyword"
+                  }
+               }
+            }
+         }
+      }
+   }
+}'
+
+curl -s --insecure -X PUT "$ES_ENDPOINT/_component_template/talsec_incident_info_privileged_access_ios" \
+  -H "Authorization: ApiKey $API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "template":{
+      "mappings":{
+         "properties":{
+            "incidentReport":{
+               "type":"object",
+               "properties":{
+                  "info":{
+                     "type":"object",
+                     "properties":{
+                        "appPaths":{
+                           "type":"keyword"
+                        },
+                        "sysasm":{
+                           "type":"keyword"
+                        },
+                        "dylibs":{
+                           "type":"keyword"
+                        },
+                        "portOpen":{
+                           "type":"keyword"
+                        },
+                        "sBifValue":{
+                           "type":"keyword"
+                        },
+                        "sbiW":{
+                           "type":"keyword"
+                        },
+                        "slPaths":{
+                           "type":"keyword"
+                        },
+                        "ffl":{
+                           "type":"keyword"
+                        },
+                        "sbiR":{
+                           "type":"keyword"
+                        },
+                        "dylds":{
+                           "type":"keyword"
+                        }
+                     }
+                  }
+               }
+            }
+         }
+      }
+   }
+}'
 
 
+curl -s --insecure -X PUT "$ES_ENDPOINT/_component_template/talsec_incident_info_app_integrity_ios" \
+  -H "Authorization: ApiKey $API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "template":{
+      "mappings":{
+         "properties":{
+            "incidentReport":{
+               "type":"object",
+               "properties":{
+                  "info":{
+                     "type":"object",
+                     "properties":{
+                        "teamIdNative":{
+                           "type":"keyword"
+                        },
+                        "teamId":{
+                           "type":"keyword"
+                        },
+                        "appId":{
+                           "type":"keyword"
+                        },
+                        "bundleId":{
+                           "type":"keyword"
+                        },
+                        "certificateInfo":{
+                           "type":"object",
+                           "properties":{
+                              "CreationDate":{
+                                 "type":"long"
+                              },
+                              "TimeToLive":{
+                                 "type":"long"
+                              },
+                              "Platform":{
+                                 "type":"keyword"
+                              },
+                              "TeamIdentifier":{
+                                 "type":"keyword"
+                              },
+                              "TeamName":{
+                                 "type":"keyword"
+                              },
+                              "IsXcodeManaged":{
+                                 "type":"boolean"
+                              },
+                              "Name":{
+                                 "type":"keyword"
+                              },
+                              "ApplicationIdentifierPrefix":{
+                                 "type":"keyword"
+                              },
+                              "ExpirationDate":{
+                                 "type":"long"
+                              },
+                              "AppIDName":{
+                                 "type":"keyword"
+                              },
+                              "Version":{
+                                 "type":"long"
+                              },
+                              "Entitlements":{
+                                 "type":"object",
+                                 "properties":{
+                                    "application-identifier":{
+                                       "type":"keyword"
+                                    },
+                                    "get-task-allow":{
+                                       "type":"boolean"
+                                    },
+                                    "keychain-access-groups":{
+                                       "type":"keyword"
+                                    },
+                                    "aps-environment":{
+                                       "type":"keyword"
+                                    }
+                                 }
+                              },
+                              "UUID":{
+                                 "type":"keyword"
+                              }
+                           }
+                        },
+                        "bundleIdNative":{
+                           "type":"keyword"
+                        }
+                     }
+                  }
+               }
+            }
+         }
+      }
+   }
+}'
+
+curl -s --insecure -X PUT "$ES_ENDPOINT/_component_template/talsec_incident_info_hooks_ios" \
+  -H "Authorization: ApiKey $API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "template":{
+      "mappings":{
+         "properties":{
+            "incidentReport":{
+               "type":"object",
+               "properties":{
+                  "info":{
+                     "type":"object",
+                     "properties":{
+                        "dylibs":{
+                           "type":"keyword"
+                        }
+                     }
+                  }
+               }
+            }
+         }
+      }
+   }
+}'
+
+curl -s --insecure -X PUT "$ES_ENDPOINT/_component_template/talsec_incident_info_systemvpn_ios" \
+  -H "Authorization: ApiKey $API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "template":{
+      "mappings":{
+         "properties":{
+            "incidentReport":{
+               "type":"object",
+               "properties":{
+                  "info":{
+                     "type":"object",
+                     "properties":{
+                        "VPNInterfaces":{
+                           "type":"keyword"
+                        }
+                     }
+                  }
+               }
+            }
+         }
+      }
+   }
+}'
+
+
+curl -s --insecure -X PUT "$ES_ENDPOINT/_component_template/talsec_incident_info_unofficial_store_ios" \
+  -H "Authorization: ApiKey $API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "template":{
+      "mappings":{
+         "properties":{
+            "incidentReport":{
+               "type":"object",
+               "properties":{
+                  "info":{
+                     "type":"object",
+                     "properties":{
+                        "encryptedBinary":{
+                           "type":"keyword"
+                        },
+                        "provisionIntegrity":{
+                           "type":"keyword"
+                        }
+                     }
+                  }
+               }
+            }
+         }
+      }
+   }
+}'
+
+
+curl -s --insecure -X PUT "$ES_ENDPOINT/_index_template/talsec_log_ios_v2" \
+  -H "Authorization: ApiKey $API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "index_patterns":[
+      "talsec_log_prod_ios_v2_2*"
+   ],
+   "template":{
+      "settings":{
+         "index":{
+            "lifecycle":{
+               "name":"talsec_prod_policy",
+               "rollover_alias":"talsec_log_prod_ios_write"
+            },
+            "number_of_replicas":"1",
+            "refresh_interval":"10s"
+         }
+      },
+      "aliases":{
+         "talsec_log_prod":{
+
+         },
+         "talsec_log_ios":{
+
+         }
+      }
+   },
+   "composed_of":[
+      "talsec_app_info",
+      "talsec_device_info",
+      "talsec_device_info_ios",
+      "talsec_fullrasp",
+      "talsec_incident_info",
+      "talsec_incident_info_app_integrity_ios",
+      "talsec_incident_info_hooks_ios",
+      "talsec_incident_info_privileged_access_ios",
+      "talsec_incident_info_unofficial_store_ios",
+      "talsec_incident_info_systemvpn_ios",
+      "talsec_incident_info_screenshot",
+      "talsec_incident_info_screen_recording",
+      "talsec_sdk_info",
+      "talsec_metadata"
+   ]
+}'
+
+
+curl -s --insecure -X PUT "$ES_ENDPOINT/_index_template/talsec_log_dev_ios_v2" \
+  -H "Authorization: ApiKey $API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "index_patterns":[
+      "talsec_log_dev_ios_v2_2*"
+   ],
+   "template":{
+      "settings":{
+         "index":{
+            "lifecycle":{
+               "name":"talsec_dev_policy",
+               "rollover_alias":"talsec_log_dev_ios_write"
+            },
+            "number_of_replicas":"1",
+            "refresh_interval":"10s"
+         }
+      },
+      "aliases":{
+         "talsec_log_ios":{
+
+         },
+         "talsec_log_dev":{
+
+         }
+      }
+   },
+   "composed_of":[
+      "talsec_app_info",
+      "talsec_device_info",
+      "talsec_device_info_ios",
+      "talsec_fullrasp",
+      "talsec_incident_info",
+      "talsec_incident_info_app_integrity_ios",
+      "talsec_incident_info_hooks_ios",
+      "talsec_incident_info_privileged_access_ios",
+      "talsec_incident_info_unofficial_store_ios",
+      "talsec_incident_info_systemvpn_ios",
+      "talsec_incident_info_screenshot",
+      "talsec_incident_info_screen_recording",
+      "talsec_sdk_info",
+      "talsec_metadata"
+   ]
+}'
+
+
+curl -s --insecure -X PUT "$ES_ENDPOINT/_component_template/talsec_metadata" \
+  -H "Authorization: ApiKey $API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "template": {
+      "mappings": {
+        "properties": {
+          "occurence": {
+            "type": "date"
+          },
+          "@timestamp": {
+            "type": "date"
+          },
+          "externalId": {
+            "type": "keyword"
+          },
+          "sessionId": {
+            "type": "keyword"
+          }
+        }
+      }
+    }
+  }'
+
+
+curl -s --insecure -X PUT "$ES_ENDPOINT/_component_template/talsec_metadata" \
+  -H "Authorization: ApiKey $API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "template": {
+      "mappings": {
+        "properties": {
+          "occurence": {
+            "type": "date"
+          },
+          "@timestamp": {
+            "type": "date"
+          },
+          "externalId": {
+            "type": "keyword"
+          },
+          "sessionId": {
+            "type": "keyword"
+          }
+        }
+      }
+    }
+  }'
+
+
+curl -s --insecure -X PUT "$ES_ENDPOINT/_component_template/talsec_metadata" \
+  -H "Authorization: ApiKey $API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "template": {
+      "mappings": {
+        "properties": {
+          "occurence": {
+            "type": "date"
+          },
+          "@timestamp": {
+            "type": "date"
+          },
+          "externalId": {
+            "type": "keyword"
+          },
+          "sessionId": {
+            "type": "keyword"
+          }
+        }
+      }
+    }
+  }'
 
 # #simplet index creation for testing
 # curl -s --insecure -X PUT "$ES_ENDPOINT/test-index-simple" \
