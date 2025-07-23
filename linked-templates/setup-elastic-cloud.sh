@@ -33,31 +33,32 @@ get_elastic_memory() {
 }
 
 # Function to map Azure regions to Elastic Cloud regions
-map_elastic_region() {
-    case $ELASTIC_REGION in
-        "eastus")
-            echo "aws-us-east-1"
-            ;;
-        "westus2")
-            echo "aws-us-west-2"
-            ;;
-        "centralus")
-            echo "aws-us-central-1"
-            ;;
-        "northeurope")
-            echo "aws-eu-north-1"
-            ;;
-        "westeurope")
-            echo "aws-eu-west-1"
-            ;;
-        *)
-            echo "aws-us-east-1"
-            ;;
-    esac
-}
+# map_elastic_region() {
+#     case $ELASTIC_REGION in
+#         "eastus")
+#             echo "aws-us-east-1"
+#             ;;
+#         "westus2")
+#             echo "aws-us-west-2"
+#             ;;
+#         "centralus")
+#             echo "aws-us-central-1"
+#             ;;
+#         "northeurope")
+#             echo "aws-eu-north-1"
+#             ;;
+#         "westeurope")
+#             echo "aws-eu-west-1"
+#             ;;
+#         *)
+#             echo "aws-us-east-1"
+#             ;;
+#     esac
+# }
 
 ELASTIC_MEMORY=$(get_elastic_memory)
-ELASTIC_CLOUD_REGION=$(map_elastic_region)
+# ELASTIC_CLOUD_REGION=$(map_elastic_region)
+ELASTIC_CLOUD_REGION="azure-eastus"
 
 echo "Creating Elastic Cloud deployment..."
 echo "  Memory: ${ELASTIC_MEMORY}MB"
