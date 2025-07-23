@@ -11,12 +11,8 @@ echo "Data Retention: $RETENTION_DAYS days"
 echo "Index Pattern: $INDEX_PATTERN"
 
 # REQUIRED: Set your Elastic Cloud API key
-ELASTIC_CLOUD_API_KEY="YOUR_ELASTIC_CLOUD_API_KEY_HERE"
+ELASTIC_CLOUD_API_KEY="essu_VDB0SWRVNDFaMEpqYkZWdllUUTBjMUJ2VDJNNlRGWmxkbUpmUjAxU2NYVkVRWG95Y0d0bk1XWTBkdz09AAAAABJ1RIE="
 
-if [ "$ELASTIC_CLOUD_API_KEY" = "YOUR_ELASTIC_CLOUD_API_KEY_HERE" ]; then
-    echo "ERROR: Please set your real Elastic Cloud API key in the script"
-    exit 1
-fi
 
 # Function to map performance tiers to Elastic Cloud specs
 get_elastic_memory() {
