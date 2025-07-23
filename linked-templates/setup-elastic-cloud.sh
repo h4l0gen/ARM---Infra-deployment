@@ -74,7 +74,7 @@ DEPLOYMENT_RESPONSE=$(curl -s -X POST "https://api.elastic-cloud.com/api/v1/depl
     "resources": {
       "elasticsearch": [{
         "ref_id": "main-elasticsearch",
-        "region": "'$ELASTIC_REGION'",
+        "region": "'$ELASTIC_CLOUD_REGION'",
         "plan": {
           "elasticsearch": {
             "version": "'$ELASTIC_VERSION'"
@@ -92,7 +92,7 @@ DEPLOYMENT_RESPONSE=$(curl -s -X POST "https://api.elastic-cloud.com/api/v1/depl
       "kibana": [{
         "ref_id": "main-kibana",
         "elasticsearch_cluster_ref_id": "main-elasticsearch",
-        "region": "'$ELASTIC_REGION'",
+        "region": "'$ELASTIC_CLOUD_REGION'",
         "plan": {
           "kibana": {
             "version": "'$ELASTIC_VERSION'"
