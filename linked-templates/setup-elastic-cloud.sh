@@ -11,8 +11,12 @@ echo "Data Retention: $RETENTION_DAYS days"
 echo "Index Pattern: $INDEX_PATTERN"
 
 # REQUIRED: Set your Elastic Cloud API key
-ELASTIC_CLOUD_API_KEY="essu_VDB0SWRVNDFaMEpqYkZWdllUUTBjMUJ2VDJNNlRGWmxkbUpmUjAxU2NYVkVRWG95Y0d0bk1XWTBkdz09AAAAABJ1RIE="
+ELASTIC_CLOUD_API_KEY="YOUR_ELASTIC_CLOUD_API_KEY_HERE"
 
+if [ "$ELASTIC_CLOUD_API_KEY" = "YOUR_ELASTIC_CLOUD_API_KEY_HERE" ]; then
+    echo "ERROR: Please set your real Elastic Cloud API key in the script"
+    exit 1
+fi
 
 # Function to map performance tiers to Elastic Cloud specs
 get_elastic_memory() {
@@ -72,6 +76,7 @@ DEPLOYMENT_RESPONSE=$(curl -s -X POST "https://api.elastic-cloud.com/api/v1/depl
     "name": "'$DEPLOYMENT_NAME'",
     "resources": {
       "elasticsearch": [{
+        "ref_id": "main-elasticsearch",
         "region": "'$ELASTIC_CLOUD_REGION'",
         "plan": {
           "elasticsearch": {
@@ -83,11 +88,14 @@ DEPLOYMENT_RESPONSE=$(curl -s -X POST "https://api.elastic-cloud.com/api/v1/depl
               "resource": "memory",
               "value": '$ELASTIC_MEMORY'
             },
-            "zone_count": 1
+            "zone_count": 1,
+            "instance_configuration_id": "aws.data.highio.i3"
           }]
         }
       }],
       "kibana": [{
+        "ref_id": "main-kibana",
+        "elasticsearch_cluster_ref_id": "main-elasticsearch",
         "region": "'$ELASTIC_CLOUD_REGION'",
         "plan": {
           "kibana": {
@@ -98,7 +106,8 @@ DEPLOYMENT_RESPONSE=$(curl -s -X POST "https://api.elastic-cloud.com/api/v1/depl
               "resource": "memory", 
               "value": 1024
             },
-            "zone_count": 1
+            "zone_count": 1,
+            "instance_configuration_id": "aws.kibana.r4"
           }]
         }
       }]
