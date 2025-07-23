@@ -74,26 +74,25 @@ DEPLOYMENT_RESPONSE=$(curl -s -X POST "https://api.elastic-cloud.com/api/v1/depl
     "resources": {
       "elasticsearch": [{
         "ref_id": "main-elasticsearch",
-        "region": "'$ELASTIC_CLOUD_REGION'",
+        "region": "'$ELASTIC_REGION'",
         "plan": {
           "elasticsearch": {
             "version": "'$ELASTIC_VERSION'"
           },
           "cluster_topology": [{
-            "node_roles": ["master", "ingest", "data_hot", "data_content"],
+            "id": "hot_content",
             "size": {
               "resource": "memory",
               "value": '$ELASTIC_MEMORY'
             },
-            "zone_count": 1,
-            "instance_configuration_id": "aws.data.highio.i3"
+            "zone_count": 1
           }]
         }
       }],
       "kibana": [{
         "ref_id": "main-kibana",
         "elasticsearch_cluster_ref_id": "main-elasticsearch",
-        "region": "'$ELASTIC_CLOUD_REGION'",
+        "region": "'$ELASTIC_REGION'",
         "plan": {
           "kibana": {
             "version": "'$ELASTIC_VERSION'"
@@ -101,10 +100,9 @@ DEPLOYMENT_RESPONSE=$(curl -s -X POST "https://api.elastic-cloud.com/api/v1/depl
           "cluster_topology": [{
             "size": {
               "resource": "memory", 
-              "value": 1024
+              "value": '$ELASTIC_MEMORY'
             },
-            "zone_count": 1,
-            "instance_configuration_id": "aws.kibana.r4"
+            "zone_count": 1
           }]
         }
       }]
