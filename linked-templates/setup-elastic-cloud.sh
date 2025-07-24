@@ -233,19 +233,19 @@ echo "  Kibana: $KIBANA_ENDPOINT"
 echo "  Username: $ELASTIC_USERNAME"
 
 # Wait for Elasticsearch to be accessible
-echo "Waiting for Elasticsearch to be accessible..."
-TIMEOUT=300
-ELAPSED=0
+# echo "Waiting for Elasticsearch to be accessible..."
+# TIMEOUT=300
+# ELAPSED=0
 
-until curl -s -k -u "$ELASTIC_USERNAME:$ELASTIC_PASSWORD" "$ELASTICSEARCH_ENDPOINT" | grep -q "cluster_name" || [ $ELAPSED -ge $TIMEOUT ]; do
-    sleep 10
-    ELAPSED=$((ELAPSED + 10))
-    echo "Waited ${ELAPSED}s for Elasticsearch..."
-done
+# until curl -s -k -u "$ELASTIC_USERNAME:$ELASTIC_PASSWORD" "$ELASTICSEARCH_ENDPOINT" | grep -q "cluster_name" || [ $ELAPSED -ge $TIMEOUT ]; do
+#     sleep 10
+#     ELAPSED=$((ELAPSED + 10))
+#     echo "Waited ${ELAPSED}s for Elasticsearch..."
+# done
 
-if [ $ELAPSED -ge $TIMEOUT ]; then
-    echo "WARNING: Elasticsearch accessibility check timed out, proceeding anyway..."
-fi
+# if [ $ELAPSED -ge $TIMEOUT ]; then
+#     echo "WARNING: Elasticsearch accessibility check timed out, proceeding anyway..."
+# fi
 
 # Create deployment info file
 cat > /tmp/deployment-info.json << EOF
