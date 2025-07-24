@@ -185,13 +185,13 @@ DEPLOYMENT_DETAILS=$(curl -s -X GET "https://api.elastic-cloud.com/api/v1/deploy
 echo "DEBUG: Checking deployment details structure..."
 echo "$DEPLOYMENT_DETAILS" | jq -r '.resources | keys'
 # Print the whole resources object
-echo "$DEPLOYMENT_RESPONSE" | jq '.resources'
+echo "$DEPLOYMENT_DETAILS" | jq '.resources'
 
 # Print elasticsearch
-echo "$DEPLOYMENT_RESPONSE" | jq '.resources.elasticsearch'
+echo "$DEPLOYMENT_DETAILS" | jq '.resources.elasticsearch'
 
 # Print first elasticsearch element
-echo "$DEPLOYMENT_RESPONSE" | jq '.resources.elasticsearch[0]'
+echo "$DEPLOYMENT_DETAILS" | jq '.resources.elasticsearch[0]'
 
 # Try different paths for endpoints
 ELASTICSEARCH_ENDPOINT=$(echo $DEPLOYMENT_DETAILS | jq -r '
