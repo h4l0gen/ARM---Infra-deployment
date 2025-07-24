@@ -89,7 +89,7 @@ DEPLOYMENT_RESPONSE=$(curl -s -X POST "https://api.elastic-cloud.com/api/v1/depl
               "transform"
             ],
             "id": "hot_content",
-            "instance_configuration_id": "azure.data.highio.d64sv4",
+            "instance_configuration_id": "azure.es.datahot.ddv4",
             "size": {
               "resource": "memory",
               "value": '$ELASTIC_MEMORY'
@@ -107,6 +107,7 @@ DEPLOYMENT_RESPONSE=$(curl -s -X POST "https://api.elastic-cloud.com/api/v1/depl
             "version": "'$ELASTIC_VERSION'"
           },
           "cluster_topology": [{
+            "instance_configuration_id": "azure.kibana.fsv2",
             "size": {
               "resource": "memory", 
               "value": '$ELASTIC_MEMORY'
