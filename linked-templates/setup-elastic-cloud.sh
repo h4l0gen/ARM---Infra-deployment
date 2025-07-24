@@ -215,7 +215,7 @@ echo "Elasticsearch endpoint: $ELASTICSEARCH_ENDPOINT"
 echo "Kibana endpoint: $KIBANA_ENDPOINT"
 
 # Get the elastic user password
-ELASTIC_PASSWORD=$(echo $DEPLOYMENT_RESPONSE | jq -r '.resources.elasticsearch.credentials.password // empty')
+ELASTIC_PASSWORD=$(echo $DEPLOYMENT_RESPONSE | jq -r '.resources.elasticsearch[0].credentials.password // empty')
 
 if [ -z "$ELASTIC_PASSWORD" ]; then
     echo "Resetting elastic user password..."
