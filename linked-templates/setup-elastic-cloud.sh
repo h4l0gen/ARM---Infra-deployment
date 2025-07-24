@@ -83,7 +83,6 @@ DEPLOYMENT_RESPONSE=$(curl -s -X POST "https://api.elastic-cloud.com/api/v1/depl
             "version": "'$ELASTIC_VERSION'"
           },
           "cluster_topology": [{
-            "id": "hot_content",
             "size": {
               "resource": "memory",
               "value": '$ELASTIC_MEMORY'
