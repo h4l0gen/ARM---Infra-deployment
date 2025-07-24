@@ -77,17 +77,38 @@ DEPLOYMENT_RESPONSE=$(curl -s -X POST "https://api.elastic-cloud.com/api/v1/depl
         "region": "'$ELASTIC_CLOUD_REGION'",
         "plan": {
           "deployment_template": {
-            "id": "azure-io-optimized-v4"
+            "id": "azure-general-purpose"
           },
           "elasticsearch": {
             "version": "'$ELASTIC_VERSION'"
           },
           "cluster_topology": [{
+            "id": "hot_content",
+            "node_roles": [
+              "master",
+              "ingest",
+              "transform",
+              "data_hot",
+              "remote_cluster_client",
+              "data_content"
+            ],
+            "elasticsearch": {
+              "node_attributes": {
+                "data": "hot"
+              }
+            },
+            "instance_configuration_id": "azure.es.datahot.ddv4",
             "size": {
               "resource": "memory",
               "value": '$ELASTIC_MEMORY'
             },
-            "zone_count": 1
+            "zone_count": 1,
+            "topology_element_control": {
+              "min": {
+                "resource": "memory",
+                "value": 1024
+              }
+            }
           }]
         }
       }],
@@ -100,6 +121,7 @@ DEPLOYMENT_RESPONSE=$(curl -s -X POST "https://api.elastic-cloud.com/api/v1/depl
             "version": "'$ELASTIC_VERSION'"
           },
           "cluster_topology": [{
+            "instance_configuration_id": "azure.kibana.e2sv3",
             "size": {
               "resource": "memory",
               "value": 1024
