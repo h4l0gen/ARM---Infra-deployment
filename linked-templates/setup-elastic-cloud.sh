@@ -121,7 +121,7 @@ DEPLOYMENT_RESPONSE=$(curl -s -X POST "https://api.elastic-cloud.com/api/v1/depl
             "version": "'$ELASTIC_VERSION'"
           },
           "cluster_topology": [{
-            "instance_configuration_id": "azure.kibana.e2sv3",
+            "instance_configuration_id": "azure.kibana.fsv2",
             "size": {
               "resource": "memory",
               "value": 1024
