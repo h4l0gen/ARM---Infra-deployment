@@ -174,10 +174,45 @@ if [ $ELAPSED -ge $TIMEOUT ]; then
     exit 1
 fi
 
-# Get deployment credentials and endpoints
-ELASTICSEARCH_ENDPOINT=$(echo $DEPLOYMENT_STATUS | jq -r '.resources.elasticsearch[0].info.metadata.endpoint')
-KIBANA_ENDPOINT=$(echo $DEPLOYMENT_STATUS | jq -r '.resources.kibana[0].info.metadata.endpoint')
+# # Get deployment credentials and endpoints
+# ELASTICSEARCH_ENDPOINT=$(echo $DEPLOYMENT_STATUS | jq -r '.resources.elasticsearch[0].info.metadata.endpoint')
+# KIBANA_ENDPOINT=$(echo $DEPLOYMENT_STATUS | jq -r '.resources.kibana[0].info.metadata.endpoint')
+echo "Fetching deployment details..."
+DEPLOYMENT_DETAILS=$(curl -s -X GET "https://api.elastic-cloud.com/api/v1/deployments/$DEPLOYMENT_ID" \
+  -H "Authorization: ApiKey $ELASTIC_CLOUD_API_KEY")
 
+# Debug: Check the structure
+echo "DEBUG: Checking deployment details structure..."
+echo "$DEPLOYMENT_DETAILS" | jq -r '.resources | keys'
+
+# Try different paths for endpoints
+ELASTICSEARCH_ENDPOINT=$(echo $DEPLOYMENT_DETAILS | jq -r '
+  .resources.elasticsearch[0].info.metadata.services.elasticsearch.https_endpoint //
+  .resources.elasticsearch[0].info.metadata.endpoint //
+  .resources.elasticsearch[0].info.elasticsearch_cluster_https_endpoint //
+  .elasticsearch.https_endpoint //
+  empty
+' 2>/dev/null)
+
+KIBANA_ENDPOINT=$(echo $DEPLOYMENT_DETAILS | jq -r '
+  .resources.kibana[0].info.metadata.services.kibana.https_endpoint //
+  .resources.kibana[0].info.metadata.endpoint //
+  .resources.kibana[0].info.kibana_cluster_https_endpoint //
+  .kibana.https_endpoint //
+  empty
+' 2>/dev/null)
+
+# If endpoints are still empty, try the credentials endpoint
+if [ -z "$ELASTICSEARCH_ENDPOINT" ]; then
+    CREDS_RESPONSE=$(curl -s -X GET "https://api.elastic-cloud.com/api/v1/deployments/$DEPLOYMENT_ID/credentials" \
+      -H "Authorization: ApiKey $ELASTIC_CLOUD_API_KEY")
+    
+    ELASTICSEARCH_ENDPOINT=$(echo $CREDS_RESPONSE | jq -r '.elasticsearch.https_endpoint // empty')
+    KIBANA_ENDPOINT=$(echo $CREDS_RESPONSE | jq -r '.kibana.https_endpoint // empty')
+fi
+
+echo "Elasticsearch endpoint: $ELASTICSEARCH_ENDPOINT"
+echo "Kibana endpoint: $KIBANA_ENDPOINT"
 # Get the elastic user password (created automatically)
 ELASTIC_PASSWORD=$(echo $DEPLOYMENT_RESPONSE | jq -r '.resources.elasticsearch[0].credentials.password // empty')
 
