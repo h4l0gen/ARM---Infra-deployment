@@ -80,11 +80,16 @@ DEPLOYMENT_RESPONSE=$(curl -s -X POST "https://api.elastic-cloud.com/api/v1/depl
             "version": "'$ELASTIC_VERSION'"
           },
           "cluster_topology": [{
-            "node_type": {
-              "data": true,
-              "ingest": true,
-              "master": true
-            },
+              "node_roles": [
+              "master",
+              "data_hot",
+              "data_content", 
+              "ingest",
+              "remote_cluster_client",
+              "transform"
+            ],
+            "id": "hot_content",
+            "instance_configuration_id": "azure.data.highio.d64sv4",
             "size": {
               "resource": "memory",
               "value": '$ELASTIC_MEMORY'
