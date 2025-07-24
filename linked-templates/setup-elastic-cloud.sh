@@ -184,6 +184,14 @@ DEPLOYMENT_DETAILS=$(curl -s -X GET "https://api.elastic-cloud.com/api/v1/deploy
 # Debug: Check the structure
 echo "DEBUG: Checking deployment details structure..."
 echo "$DEPLOYMENT_DETAILS" | jq -r '.resources | keys'
+# Print the whole resources object
+echo "$DEPLOYMENT_RESPONSE" | jq '.resources'
+
+# Print elasticsearch
+echo "$DEPLOYMENT_RESPONSE" | jq '.resources.elasticsearch'
+
+# Print first elasticsearch element
+echo "$DEPLOYMENT_RESPONSE" | jq '.resources.elasticsearch[0]'
 
 # Try different paths for endpoints
 ELASTICSEARCH_ENDPOINT=$(echo $DEPLOYMENT_DETAILS | jq -r '
@@ -213,9 +221,10 @@ fi
 
 echo "Elasticsearch endpoint: $ELASTICSEARCH_ENDPOINT"
 echo "Kibana endpoint: $KIBANA_ENDPOINT"
-
+echo "Elastic password retrieving"
 # Get the elastic user password
 ELASTIC_PASSWORD=$(echo $DEPLOYMENT_RESPONSE | jq -r '.resources.elasticsearch[0].credentials.password // empty')
+echo "Elastic password got: $ELASTIC_PASSWORD"
 
 if [ -z "$ELASTIC_PASSWORD" ]; then
     echo "Resetting elastic user password..."
