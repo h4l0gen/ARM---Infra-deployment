@@ -76,6 +76,9 @@ DEPLOYMENT_RESPONSE=$(curl -s -X POST "https://api.elastic-cloud.com/api/v1/depl
         "ref_id": "main-elasticsearch",
         "region": "'$ELASTIC_CLOUD_REGION'",
         "plan": {
+          "deployment_template": {
+            "id": "azure-io-optimized-v2"
+          },
           "elasticsearch": {
             "version": "'$ELASTIC_VERSION'"
           },
