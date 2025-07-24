@@ -80,7 +80,7 @@ DEPLOYMENT_RESPONSE=$(curl -s -X POST "https://api.elastic-cloud.com/api/v1/depl
             "version": "'$ELASTIC_VERSION'"
           },
           "cluster_topology": [{
-              "node_roles": [
+            "node_roles": [
               "master",
               "data_hot",
               "data_content", 
