@@ -76,39 +76,19 @@ DEPLOYMENT_RESPONSE=$(curl -s -X POST "https://api.elastic-cloud.com/api/v1/depl
         "ref_id": "main-elasticsearch",
         "region": "'$ELASTIC_CLOUD_REGION'",
         "plan": {
+          "deployment_template": {
+            "id": "azure-io-optimized-v4"
+          },
+          "elasticsearch": {
+            "version": "'$ELASTIC_VERSION'"
+          },
           "cluster_topology": [{
-            "id": "hot_content",
-            "node_type": {
-              "master": true,
-              "data": true,
-              "ingest": true
-            },
-            "node_roles": [
-              "master",
-              "ingest",
-              "transform",
-              "data_hot",
-              "remote_cluster_client",
-              "data_content"
-            ],
-            "elasticsearch": {
-              "node_attributes": {
-                "data": "hot"
-              }
-            },
-            "instance_configuration_id": "azure.data.highio.l32sv2",
             "size": {
               "resource": "memory",
               "value": '$ELASTIC_MEMORY'
             },
             "zone_count": 1
-          }],
-          "elasticsearch": {
-            "version": "'$ELASTIC_VERSION'"
-          },
-          "deployment_template": {
-            "id": "azure-io-optimized-v2"
-          }
+          }]
         }
       }],
       "kibana": [{
@@ -120,10 +100,9 @@ DEPLOYMENT_RESPONSE=$(curl -s -X POST "https://api.elastic-cloud.com/api/v1/depl
             "version": "'$ELASTIC_VERSION'"
           },
           "cluster_topology": [{
-            "instance_configuration_id": "azure.kibana.fsv2",
             "size": {
-              "resource": "memory", 
-              "value": '$ELASTIC_MEMORY'
+              "resource": "memory",
+              "value": 1024
             },
             "zone_count": 1
           }]
