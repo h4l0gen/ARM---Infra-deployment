@@ -213,13 +213,13 @@ fi
 
 echo "Elasticsearch endpoint: $ELASTICSEARCH_ENDPOINT"
 echo "Kibana endpoint: $KIBANA_ENDPOINT"
-# Get the elastic user password (created automatically)
-ELASTIC_PASSWORD=$(echo $DEPLOYMENT_RESPONSE | jq -r '.resources.elasticsearch[0].credentials.password // empty')
+
+# Get the elastic user password
+ELASTIC_PASSWORD=$(echo $DEPLOYMENT_RESPONSE | jq -r '.resources.elasticsearch.credentials.password // empty')
 
 if [ -z "$ELASTIC_PASSWORD" ]; then
-    # If password not in response, reset it
     echo "Resetting elastic user password..."
-    RESET_RESPONSE=$(curl -s -X POST "https://api.elastic-cloud.com/api/v1/deployments/$DEPLOYMENT_ID/_reset-password" \
+    RESET_RESPONSE=$(curl -s -X POST "https://api.elastic-cloud.com/api/v1/deployments/$DEPLOYMENT_ID/elasticsearch/main-elasticsearch/_reset-password" \
       -H "Authorization: ApiKey $ELASTIC_CLOUD_API_KEY")
     ELASTIC_PASSWORD=$(echo $RESET_RESPONSE | jq -r '.password')
 fi
