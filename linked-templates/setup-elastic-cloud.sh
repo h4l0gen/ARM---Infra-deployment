@@ -141,6 +141,9 @@ if echo "$DEPLOYMENT_RESPONSE" | grep -q "errors"; then
 fi
 
 # Extract deployment info
+echo "$DEPLOYMENT_STATUS" | jq '.'
+
+
 DEPLOYMENT_ID=$(echo $DEPLOYMENT_RESPONSE | jq -r '.id')
 echo "Deployment created with ID: $DEPLOYMENT_ID"
 
