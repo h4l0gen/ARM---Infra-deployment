@@ -3,6 +3,8 @@
 ELASTIC_URL="$ELASTICSEARCH_NAME"
 KIBANA_URL="$KIBANA_NAME"
 
+echo "$ELASTIC_URL"
+echo "$KIBANA_URL"
 
 echo "Testing connection to Kibana..."
 # Test connection first
