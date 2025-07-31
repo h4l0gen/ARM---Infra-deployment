@@ -1,20 +1,55 @@
 #!/bin/bash
 
-# Get the Elastic monitor resource details
+set -e
+
+echo "Waiting for Elastic deployment to be ready..."
+sleep 120
+
+# In a managed app, we're already in the managed resource group
+# The RESOURCE_GROUP variable should already point to the managed RG
+
+echo "Current subscription: $(az account show --query id -o tsv)"
+echo "Resource group: $RESOURCE_GROUP"
+echo "Monitor name: $MONITOR_NAME"
+
+# List resources to debug
+echo "Resources in this group:"
+az resource list --resource-group $RESOURCE_GROUP --output table
+
+# Get the Elastic monitor - note it might need full resource ID
+echo "Getting Elastic monitor details..."
 MONITOR_JSON=$(az resource show \
-  --resource-group $RESOURCE_GROUP \
-  --resource-type Microsoft.Elastic/monitors \
-  --name $MONITOR_NAME \
-  --api-version 2025-01-15-preview)
+  --ids "/subscriptions/$(az account show --query id -o tsv)/resourceGroups/$RESOURCE_GROUP/providers/Microsoft.Elastic/monitors/$MONITOR_NAME" \
+  --api-version 2025-01-15-preview 2>/dev/null)
 
-# Extract values using jq
-KIBANA_URL=$(echo $MONITOR_JSON | jq -r '.properties.elasticCloudDeployment.kibanaServiceUrl')
-ELASTIC_URL=$(echo $MONITOR_JSON | jq -r '.properties.elasticCloudDeployment.elasticsearchServiceUrl')
-EMAIL=$(echo $MONITOR_JSON | jq -r '.properties.elasticCloudUser.emailAddress')
+if [ -z "$MONITOR_JSON" ]; then
+    echo "ERROR: Could not find Elastic monitor $MONITOR_NAME in resource group $RESOURCE_GROUP"
+    exit 1
+fi
 
+# Extract endpoints - check both possible paths
+KIBANA_URL=$(echo $MONITOR_JSON | jq -r '.properties.elasticProperties.elasticCloudDeployment.kibanaServiceUrl // .properties.elasticCloudDeployment.kibanaServiceUrl // empty')
+ELASTIC_URL=$(echo $MONITOR_JSON | jq -r '.properties.elasticProperties.elasticCloudDeployment.elasticsearchServiceUrl // .properties.elasticCloudDeployment.elasticsearchServiceUrl // empty')
+EMAIL=$(echo $MONITOR_JSON | jq -r '.properties.elasticProperties.elasticCloudUser.emailAddress // .properties.elasticCloudUser.emailAddress // empty')
+
+# Debug output
+echo "Extracted values:"
 echo "Kibana URL: $KIBANA_URL"
 echo "Elastic URL: $ELASTIC_URL"
 echo "Email: $EMAIL"
+
+if [ -z "$KIBANA_URL" ] || [ -z "$ELASTIC_URL" ]; then
+    echo "ERROR: Could not extract URLs from monitor resource"
+    echo "Monitor JSON:"
+    echo "$MONITOR_JSON" | jq '.'
+    exit 1
+fi
+
+# Continue with password check
+if [ -z "$ELASTIC_PASSWORD" ]; then
+    echo "ERROR: ELASTIC_PASSWORD not provided"
+    exit 1
+fi
 
 # KIBANA_URL="https://47f58beafd2642a69b2250bab3dff8e3.eastus.azure.elastic-cloud.com"
 # ELASTIC_URL="https://myelasticmonitor1.es.eastus.azure.elastic-cloud.com"
@@ -23,8 +58,8 @@ echo "Email: $EMAIL"
 # # need to get this password
 # PASSWORD="bQHd6857lxkwNIw7p6oCf6wu"
 
-# # Create auth header
-# AUTH_HEADER="Authorization: Basic $(echo -n elastic:$PASSWORD | base64)"
+# Create auth header
+AUTH_HEADER="Authorization: Basic $(echo -n elastic:$PASSWORD | base64)"
 
 # echo "Testing connection to Kibana..."
 # Test connection first
