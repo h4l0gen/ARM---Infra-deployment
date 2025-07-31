@@ -1,19 +1,12 @@
 #!/bin/bash
 
-KIBANA_URL="https://kapilpoc.kb.eastus.azure.elastic-cloud.com"
-ELASTIC_URL="https://kapilpoc.es.eastus.azure.elastic-cloud.com"
-EMAIL="kapil@talsecapp.onmicrosoft.com"
+ELASTIC_URL="$ELASTICSEARCH_NAME"
+KIBANA_URL="$KIBANA_NAME"
 
-# need to get this password
-PASSWORD="X71eskMvM69EkZN9gQaxvF4E"
-
-# Create auth header
-AUTH_HEADER="Authorization: Basic $(echo -n elastic:$PASSWORD | base64)"
 
 echo "Testing connection to Kibana..."
 # Test connection first
 RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" -X GET "$KIBANA_URL/api/status" \
-    -H "$AUTH_HEADER" \
     -H "kbn-xsrf: true")
 
 if [ "$RESPONSE" -ne "200" ]; then
@@ -24,48 +17,9 @@ fi
 
 echo "Connected successfully!"
 
-# List current saved objects
-echo -e "\nChecking current Kibana objects..."
-OBJECT_TYPES=("dashboard" "visualization" "search" "index-pattern")
-
-for TYPE in "${OBJECT_TYPES[@]}"; do
-    echo -e "\nChecking $TYPE objects:"
-    curl -s -X GET "$KIBANA_URL/api/saved_objects/_find?type=$TYPE" \
-        -H "$AUTH_HEADER" \
-        -H "Content-Type: application/json" \
-        -H "kbn-xsrf: true" | jq -r '.saved_objects[] | "\(.id) - \(.attributes.title)"'
-done
-
-# Ask before cleanup
-echo -e "\nDo you want to proceed with cleanup? (y/n)"
-read CONFIRM
-
-if [ "$CONFIRM" = "y" ]; then
-    # Cleanup script
-    for TYPE in "${OBJECT_TYPES[@]}"; do
-        echo -e "\nCleaning $TYPE objects..."
-        
-        RESPONSE=$(curl -s -X GET "$KIBANA_URL/api/saved_objects/_find?type=$TYPE&per_page=10000" \
-            -H "$AUTH_HEADER" \
-            -H "Content-Type: application/json" \
-            -H "kbn-xsrf: true")
-        
-        echo $RESPONSE | jq -r ".saved_objects[]?.id" | while read ID; do
-            if [ ! -z "$ID" ]; then
-                curl -s -X DELETE "$KIBANA_URL/api/saved_objects/$TYPE/$ID?force=true" \
-                    -H "$AUTH_HEADER" \
-                    -H "kbn-xsrf: true"
-                echo "Deleted $TYPE: $ID"
-            fi
-        done
-    done
-    
-    echo -e "\nCleanup completed!"
-fi
 
 # In your deployment script
 curl -X PUT "$ELASTIC_URL/_ilm/policy/talsec_prod_policy" \
-  -H "Authorization: Basic $(echo -n elastic:$PASSWORD | base64)" \
   -H "Content-Type: application/json" \
   -d '{
     "policy": {
@@ -90,8 +44,7 @@ echo "ILM policy is created"
 
 
 # Common template 1
-curl  -X PUT "$ELASTIC_URL/_component_template/talsec_device_info" \
-  -H "Authorization: Basic $(echo -n elastic:$PASSWORD | base64)" \
+curl -X PUT "$ELASTIC_URL/_component_template/talsec_device_info" \
   -H "Content-Type: application/json" \
   -d '{
     "template": {
@@ -148,7 +101,6 @@ curl  -X PUT "$ELASTIC_URL/_component_template/talsec_device_info" \
 
 # common template 2
 curl  -X PUT "$ELASTIC_URL/_component_template/talsec_metadata" \
-  -H "Authorization: Basic $(echo -n elastic:$PASSWORD | base64)" \
   -H "Content-Type: application/json" \
   -d '{
     "template": {
@@ -173,7 +125,6 @@ curl  -X PUT "$ELASTIC_URL/_component_template/talsec_metadata" \
 
 # common template 3
 curl  -X PUT "$ELASTIC_URL/_component_template/talsec_app_info" \
-  -H "Authorization: Basic $(echo -n elastic:$PASSWORD | base64)" \
   -H "Content-Type: application/json" \
   -d '{
     "template":{
@@ -222,7 +173,6 @@ curl  -X PUT "$ELASTIC_URL/_component_template/talsec_app_info" \
 
 # common template 3
 curl  -X PUT "$ELASTIC_URL/_component_template/talsec_sdk_info" \
-  -H "Authorization: Basic $(echo -n elastic:$PASSWORD | base64)" \
   -H "Content-Type: application/json" \
   -d '{
     "template":{
@@ -249,7 +199,6 @@ curl  -X PUT "$ELASTIC_URL/_component_template/talsec_sdk_info" \
 }'
 
 curl  -X PUT "$ELASTIC_URL/_component_template/talsec_fullrasp" \
-  -H "Authorization: Basic $(echo -n elastic:$PASSWORD | base64)" \
   -H "Content-Type: application/json" \
   -d '{
     "template":{
@@ -270,7 +219,6 @@ curl  -X PUT "$ELASTIC_URL/_component_template/talsec_fullrasp" \
 }'
 
 curl  -X PUT "$ELASTIC_URL/_component_template/talsec_incident_info" \
-  -H "Authorization: Basic $(echo -n elastic:$PASSWORD | base64)" \
   -H "Content-Type: application/json" \
   -d '{
     "template":{
@@ -444,7 +392,6 @@ curl  -X PUT "$ELASTIC_URL/_component_template/talsec_incident_info" \
 }'
 
 curl  -X PUT "$ELASTIC_URL/_component_template/talsec_incident_info_screenshot" \
-  -H "Authorization: Basic $(echo -n elastic:$PASSWORD | base64)" \
   -H "Content-Type: application/json" \
   -d '{
     "template":{
@@ -469,7 +416,6 @@ curl  -X PUT "$ELASTIC_URL/_component_template/talsec_incident_info_screenshot" 
 }'
 
 curl  -X PUT "$ELASTIC_URL/_component_template/talsec_incident_info_screen_recording" \
-  -H "Authorization: Basic $(echo -n elastic:$PASSWORD | base64)" \
   -H "Content-Type: application/json" \
   -d '{
     "template": {
@@ -495,7 +441,6 @@ curl  -X PUT "$ELASTIC_URL/_component_template/talsec_incident_info_screen_recor
 # Android templates now
 
 curl  -X PUT "$ELASTIC_URL/_component_template/talsec_device_info_android" \
-  -H "Authorization: Basic $(echo -n elastic:$PASSWORD | base64)" \
   -H "Content-Type: application/json" \
   -d '{
     "template":{
@@ -565,7 +510,6 @@ curl  -X PUT "$ELASTIC_URL/_component_template/talsec_device_info_android" \
 
 
 curl  -X PUT "$ELASTIC_URL/_component_template/talsec_app_info_android" \
-  -H "Authorization: Basic $(echo -n elastic:$PASSWORD | base64)" \
   -H "Content-Type: application/json" \
   -d '{
     "template":{
@@ -597,7 +541,6 @@ curl  -X PUT "$ELASTIC_URL/_component_template/talsec_app_info_android" \
 }'
 
 curl  -X PUT "$ELASTIC_URL/_component_template/talsec_sdk_state_android" \
-  -H "Authorization: Basic $(echo -n elastic:$PASSWORD | base64)" \
   -H "Content-Type: application/json" \
   -d '{
     "template":{
@@ -620,7 +563,6 @@ curl  -X PUT "$ELASTIC_URL/_component_template/talsec_sdk_state_android" \
 }'
 
 curl  -X PUT "$ELASTIC_URL/_component_template/talsec_incident_info_android" \
-  -H "Authorization: Basic $(echo -n elastic:$PASSWORD | base64)" \
   -H "Content-Type: application/json" \
   -d '{
     "template":{
@@ -686,7 +628,6 @@ curl  -X PUT "$ELASTIC_URL/_component_template/talsec_incident_info_android" \
 }'
 
 curl  -X PUT "$ELASTIC_URL/_component_template/talsec_incident_info_privileged_access_android" \
-  -H "Authorization: Basic $(echo -n elastic:$PASSWORD | base64)" \
   -H "Content-Type: application/json" \
   -d '{
     "template":{
@@ -797,7 +738,6 @@ curl  -X PUT "$ELASTIC_URL/_component_template/talsec_incident_info_privileged_a
 }'
 
 curl  -X PUT "$ELASTIC_URL/_component_template/talsec_incident_info_app_integrity_android" \
-  -H "Authorization: Basic $(echo -n elastic:$PASSWORD | base64)" \
   -H "Content-Type: application/json" \
   -d '{
     "template":{
@@ -888,7 +828,6 @@ curl  -X PUT "$ELASTIC_URL/_component_template/talsec_incident_info_app_integrit
 }'
 
 curl  -X PUT "$ELASTIC_URL/_component_template/talsec_incident_info_missing_obfuscation_android" \
-  -H "Authorization: Basic $(echo -n elastic:$PASSWORD | base64)" \
   -H "Content-Type: application/json" \
   -d '{
     "template":{
@@ -913,7 +852,6 @@ curl  -X PUT "$ELASTIC_URL/_component_template/talsec_incident_info_missing_obfu
 }'
 
 curl  -X PUT "$ELASTIC_URL/_component_template/talsec_incident_info_hooks_android" \
-  -H "Authorization: Basic $(echo -n elastic:$PASSWORD | base64)" \
   -H "Content-Type: application/json" \
   -d '{
     "template":{
@@ -962,7 +900,6 @@ curl  -X PUT "$ELASTIC_URL/_component_template/talsec_incident_info_hooks_androi
 }'
 
 curl  -X PUT "$ELASTIC_URL/_component_template/talsec_incident_info_debug_android" \
-  -H "Authorization: Basic $(echo -n elastic:$PASSWORD | base64)" \
   -H "Content-Type: application/json" \
   -d '{
     "template":{
@@ -996,7 +933,6 @@ curl  -X PUT "$ELASTIC_URL/_component_template/talsec_incident_info_debug_androi
 }'
 
 curl  -X PUT "$ELASTIC_URL/_component_template/talsec_incident_info_simulator_android" \
-  -H "Authorization: Basic $(echo -n elastic:$PASSWORD | base64)" \
   -H "Content-Type: application/json" \
   -d '{
     "template":{
@@ -1089,7 +1025,6 @@ curl  -X PUT "$ELASTIC_URL/_component_template/talsec_incident_info_simulator_an
 }'
 
 curl  -X PUT "$ELASTIC_URL/_component_template/talsec_incident_info_overlay_android" \
-  -H "Authorization: Basic $(echo -n elastic:$PASSWORD | base64)" \
   -H "Content-Type: application/json" \
   -d '{
     "template":{
@@ -1117,7 +1052,6 @@ curl  -X PUT "$ELASTIC_URL/_component_template/talsec_incident_info_overlay_andr
 }'
 
 curl  -X PUT "$ELASTIC_URL/_component_template/talsec_incident_info_accessibility_android" \
-  -H "Authorization: Basic $(echo -n elastic:$PASSWORD | base64)" \
   -H "Content-Type: application/json" \
   -d '{
     "template":{
@@ -1145,7 +1079,6 @@ curl  -X PUT "$ELASTIC_URL/_component_template/talsec_incident_info_accessibilit
 }'
 
 curl  -X PUT "$ELASTIC_URL/_component_template/talsec_incident_info_unofficial_store_android" \
-  -H "Authorization: Basic $(echo -n elastic:$PASSWORD | base64)" \
   -H "Content-Type: application/json" \
   -d '{
     "template":{
@@ -1173,7 +1106,6 @@ curl  -X PUT "$ELASTIC_URL/_component_template/talsec_incident_info_unofficial_s
 }'
 
 curl  -X PUT "$ELASTIC_URL/_component_template/talsec_incident_info_device_binding_android" \
-  -H "Authorization: Basic $(echo -n elastic:$PASSWORD | base64)" \
   -H "Content-Type: application/json" \
   -d '{
     "template":{
@@ -1201,7 +1133,6 @@ curl  -X PUT "$ELASTIC_URL/_component_template/talsec_incident_info_device_bindi
 }'
 
 curl  -X PUT "$ELASTIC_URL/_component_template/talsec_incident_info_devmode_android" \
-  -H "Authorization: Basic $(echo -n elastic:$PASSWORD | base64)" \
   -H "Content-Type: application/json" \
   -d '{
     "template":{
@@ -1226,7 +1157,6 @@ curl  -X PUT "$ELASTIC_URL/_component_template/talsec_incident_info_devmode_andr
 }'
 
 curl  -X PUT "$ELASTIC_URL/_component_template/talsec_incident_info_systemvpn_android" \
-  -H "Authorization: Basic $(echo -n elastic:$PASSWORD | base64)" \
   -H "Content-Type: application/json" \
   -d '{
     "template":{
@@ -1251,7 +1181,6 @@ curl  -X PUT "$ELASTIC_URL/_component_template/talsec_incident_info_systemvpn_an
 }'
 
 curl  -X PUT "$ELASTIC_URL/_component_template/talsec_incident_info_monitoring_android" \
-  -H "Authorization: Basic $(echo -n elastic:$PASSWORD | base64)" \
   -H "Content-Type: application/json" \
   -d '{
     "template":{
@@ -1279,7 +1208,6 @@ curl  -X PUT "$ELASTIC_URL/_component_template/talsec_incident_info_monitoring_a
 }'
 
 curl  -X PUT "$ELASTIC_URL/_component_template/talsec_incident_info_malware_android" \
-  -H "Authorization: Basic $(echo -n elastic:$PASSWORD | base64)" \
   -H "Content-Type: application/json" \
   -d '{
     "template":{
@@ -1318,7 +1246,6 @@ curl  -X PUT "$ELASTIC_URL/_component_template/talsec_incident_info_malware_andr
 }'
 
 curl  -X PUT "$ELASTIC_URL/_component_template/talsec_incident_info_adb_enabled_android" \
-  -H "Authorization: Basic $(echo -n elastic:$PASSWORD | base64)" \
   -H "Content-Type: application/json" \
   -d '{
     "template":{
@@ -1343,7 +1270,6 @@ curl  -X PUT "$ELASTIC_URL/_component_template/talsec_incident_info_adb_enabled_
 }'
 
 curl  -X PUT "$ELASTIC_URL/_index_template/talsec_log_android_v2" \
-  -H "Authorization: Basic $(echo -n elastic:$PASSWORD | base64)" \
   -H "Content-Type: application/json" \
   -d '{
     "index_patterns":[
@@ -1401,7 +1327,6 @@ curl  -X PUT "$ELASTIC_URL/_index_template/talsec_log_android_v2" \
 }'
 
 curl  -X PUT "$ELASTIC_URL/_index_template/talsec_log_dev_android_v2" \
-  -H "Authorization: Basic $(echo -n elastic:$PASSWORD | base64)" \
   -H "Content-Type: application/json" \
   -d '{
     "index_patterns":[
@@ -1460,7 +1385,6 @@ curl  -X PUT "$ELASTIC_URL/_index_template/talsec_log_dev_android_v2" \
 
 ###### IOS starts from here
 curl  -X PUT "$ELASTIC_URL/_component_template/talsec_device_info_ios" \
-  -H "Authorization: Basic $(echo -n elastic:$PASSWORD | base64)" \
   -H "Content-Type: application/json" \
   -d '{
     "template":{
@@ -1483,7 +1407,6 @@ curl  -X PUT "$ELASTIC_URL/_component_template/talsec_device_info_ios" \
 }'
 
 curl  -X PUT "$ELASTIC_URL/_component_template/talsec_incident_info_privileged_access_ios" \
-  -H "Authorization: Basic $(echo -n elastic:$PASSWORD | base64)" \
   -H "Content-Type: application/json" \
   -d '{
     "template":{
@@ -1536,7 +1459,6 @@ curl  -X PUT "$ELASTIC_URL/_component_template/talsec_incident_info_privileged_a
 
 
 curl  -X PUT "$ELASTIC_URL/_component_template/talsec_incident_info_app_integrity_ios" \
-  -H "Authorization: Basic $(echo -n elastic:$PASSWORD | base64)" \
   -H "Content-Type: application/json" \
   -d '{
     "template":{
@@ -1631,7 +1553,6 @@ curl  -X PUT "$ELASTIC_URL/_component_template/talsec_incident_info_app_integrit
 }'
 
 curl  -X PUT "$ELASTIC_URL/_component_template/talsec_incident_info_hooks_ios" \
-  -H "Authorization: Basic $(echo -n elastic:$PASSWORD | base64)" \
   -H "Content-Type: application/json" \
   -d '{
     "template":{
@@ -1656,7 +1577,6 @@ curl  -X PUT "$ELASTIC_URL/_component_template/talsec_incident_info_hooks_ios" \
 }'
 
 curl  -X PUT "$ELASTIC_URL/_component_template/talsec_incident_info_systemvpn_ios" \
-  -H "Authorization: Basic $(echo -n elastic:$PASSWORD | base64)" \
   -H "Content-Type: application/json" \
   -d '{
     "template":{
@@ -1682,7 +1602,6 @@ curl  -X PUT "$ELASTIC_URL/_component_template/talsec_incident_info_systemvpn_io
 
 
 curl  -X PUT "$ELASTIC_URL/_component_template/talsec_incident_info_unofficial_store_ios" \
-  -H "Authorization: Basic $(echo -n elastic:$PASSWORD | base64)" \
   -H "Content-Type: application/json" \
   -d '{
     "template":{
@@ -1711,7 +1630,6 @@ curl  -X PUT "$ELASTIC_URL/_component_template/talsec_incident_info_unofficial_s
 
 
 curl  -X PUT "$ELASTIC_URL/_index_template/talsec_log_ios_v2" \
-  -H "Authorization: Basic $(echo -n elastic:$PASSWORD | base64)" \
   -H "Content-Type: application/json" \
   -d '{
     "index_patterns":[
@@ -1757,7 +1675,6 @@ curl  -X PUT "$ELASTIC_URL/_index_template/talsec_log_ios_v2" \
 
 
 curl  -X PUT "$ELASTIC_URL/_index_template/talsec_log_dev_ios_v2" \
-  -H "Authorization: Basic $(echo -n elastic:$PASSWORD | base64)" \
   -H "Content-Type: application/json" \
   -d '{
     "index_patterns":[
@@ -1803,7 +1720,6 @@ curl  -X PUT "$ELASTIC_URL/_index_template/talsec_log_dev_ios_v2" \
 
 
 curl  -X PUT "$ELASTIC_URL/_component_template/talsec_metadata" \
-  -H "Authorization: Basic $(echo -n elastic:$PASSWORD | base64)" \
   -H "Content-Type: application/json" \
   -d '{
     "template": {
@@ -1828,7 +1744,6 @@ curl  -X PUT "$ELASTIC_URL/_component_template/talsec_metadata" \
 
 
 curl  -X PUT "$ELASTIC_URL/_component_template/talsec_metadata" \
-  -H "Authorization: Basic $(echo -n elastic:$PASSWORD | base64)" \
   -H "Content-Type: application/json" \
   -d '{
     "template": {
@@ -1853,7 +1768,6 @@ curl  -X PUT "$ELASTIC_URL/_component_template/talsec_metadata" \
 
 
 curl  -X PUT "$ELASTIC_URL/_component_template/talsec_metadata" \
-  -H "Authorization: Basic $(echo -n elastic:$PASSWORD | base64)" \
   -H "Content-Type: application/json" \
   -d '{
     "template": {
@@ -1878,7 +1792,6 @@ curl  -X PUT "$ELASTIC_URL/_component_template/talsec_metadata" \
 
 TODAY=$(date +%Y.%m.%d)
 curl  -X PUT "$ELASTIC_URL/talsec_log_prod_ios_v2_${TODAY}-000001" \
-  -H "Authorization: Basic $(echo -n elastic:$PASSWORD | base64)" \
   -H "Content-Type: application/json" \
   -d '{
     "aliases": {
@@ -1890,7 +1803,6 @@ curl  -X PUT "$ELASTIC_URL/talsec_log_prod_ios_v2_${TODAY}-000001" \
 
 # android prod index
 curl  -X PUT "$ELASTIC_URL/talsec_log_prod_android_v2_${TODAY}-000001" \
-  -H "Authorization: Basic $(echo -n elastic:$PASSWORD | base64)" \
   -H "Content-Type: application/json" \
   -d '{
     "aliases": {
@@ -1902,7 +1814,6 @@ curl  -X PUT "$ELASTIC_URL/talsec_log_prod_android_v2_${TODAY}-000001" \
 
 # ios dev index
 curl  -X PUT "$ELASTIC_URL/talsec_log_dev_ios_v2_${TODAY}-000001" \
-  -H "Authorization: Basic $(echo -n elastic:$PASSWORD | base64)" \
   -H "Content-Type: application/json" \
   -d '{
     "aliases": {
@@ -1913,7 +1824,6 @@ curl  -X PUT "$ELASTIC_URL/talsec_log_dev_ios_v2_${TODAY}-000001" \
   }'
 # android dev index
 curl  -X PUT "$ELASTIC_URL/talsec_log_dev_android_v2_${TODAY}-000001" \
-  -H "Authorization: Basic $(echo -n elastic:$PASSWORD | base64)" \
   -H "Content-Type: application/json" \
   -d '{
     "aliases": {
@@ -1928,7 +1838,6 @@ curl  -X PUT "$ELASTIC_URL/talsec_log_dev_android_v2_${TODAY}-000001" \
 
 # Pipelines
 curl  -X PUT "$ELASTIC_URL/_ingest/pipeline/talsec_log_set_session" \
-  -H "Authorization: Basic $(echo -n elastic:$PASSWORD | base64)" \
   -H "Content-Type: application/json" \
   -d '{
     "processors": [
@@ -1957,7 +1866,6 @@ curl  -X PUT "$ELASTIC_URL/_ingest/pipeline/talsec_log_set_session" \
   }'
 
 curl  -X PUT "$ELASTIC_URL/_ingest/pipeline/set_timestamp" \
-  -H "Authorization: Basic $(echo -n elastic:$PASSWORD | base64)" \
   -H "Content-Type: application/json" \
   -d '{
     "processors": [
@@ -1972,7 +1880,6 @@ curl  -X PUT "$ELASTIC_URL/_ingest/pipeline/set_timestamp" \
   }'
 
 curl  -X PUT "$ELASTIC_URL/_ingest/pipeline/talsec_log_set_type" \
-  -H "Authorization: Basic $(echo -n elastic:$PASSWORD | base64)" \
   -H "Content-Type: application/json" \
   -d '{
     "processors" : [
@@ -1994,7 +1901,6 @@ curl  -X PUT "$ELASTIC_URL/_ingest/pipeline/talsec_log_set_type" \
   }'
 
 curl  -X PUT "$ELASTIC_URL/_ingest/pipeline/talsec_log_deviceId" \
-  -H "Authorization: Basic $(echo -n elastic:$PASSWORD | base64)" \
   -H "Content-Type: application/json" \
   -d '{
     "processors": [
@@ -2030,7 +1936,6 @@ curl  -X PUT "$ELASTIC_URL/_ingest/pipeline/talsec_log_deviceId" \
   }'
 
 curl  -X PUT "$ELASTIC_URL/_ingest/pipeline/talsec_log_index" \
-  -H "Authorization: Basic $(echo -n elastic:$PASSWORD | base64)" \
   -H "Content-Type: application/json" \
   -d '{
     "processors": [
@@ -2061,10 +1966,7 @@ curl  -X PUT "$ELASTIC_URL/_ingest/pipeline/talsec_log_index" \
 # Create API key for applications to send logs
 echo "Creating log ingestion API key..."
 
-AUTH_HEADER="Authorization: Basic $(echo -n elastic:$PASSWORD | base64)"
-
 LOG_API_KEY_RESPONSE=$(curl -s -X POST "$ELASTIC_URL/_security/api_key" \
-  -H "$AUTH_HEADER" \
   -H "Content-Type: application/json" \
   -d '{
     "name": "talsec_create_doc",
@@ -2097,7 +1999,6 @@ sed -i "s/\"description\":\"testing\"/\"description\":\"$CUSTOMER_NAME Security 
 # Import dashboard using API key
 DASHBOARD_RESPONSE=$(curl -X POST "$KIBANA_URL/api/saved_objects/_import?overwrite=true" \
   -H "kbn-xsrf: true" \
-  -H "Authorization: Basic $(echo -n elastic:$PASSWORD | base64)" \
   -F "file=@/tmp/dashboard.ndjson")
 
 echo "Dashboard import response: $DASHBOARD_RESPONSE"
