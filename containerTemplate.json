@@ -1,0 +1,428 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "environmentName": {
+            "type": "string",
+            "defaultValue": "[concat('elastic-env-', uniqueString(resourceGroup().id))]",
+            "metadata": {
+                "description": "Name for the Container Apps Environment"
+            }
+        },
+        "elasticsearchName": {
+            "type": "string",
+            "defaultValue": "elasticsearch",
+            "metadata": {
+                "description": "Name for the Elasticsearch container app"
+            }
+        },
+        "kibanaName": {
+            "type": "string",
+            "defaultValue": "kibana",
+            "metadata": {
+                "description": "Name for the Kibana container app"
+            }
+        },
+        "location": {
+            "type": "string",
+            "defaultValue": "[resourceGroup().location]",
+            "metadata": {
+                "description": "Location for all resources"
+            }
+        },
+        "elasticPassword": {
+            "type": "securestring",
+            "metadata": {
+                "description": "Password for the elastic user"
+            }
+        },
+        "companyName": {
+            "type": "string",
+            "metadata": {
+                "description": "Company name for branding"
+            }
+        },
+        "companyLogo": {
+            "type": "string",
+            "defaultValue": "https://via.placeholder.com/200x84/0066cc/ffffff?text=Your+Logo",
+            "metadata": {
+                "description": "URL to company logo for Kibana branding"
+            }
+        },
+        "primaryColor": {
+            "type": "string",
+            "defaultValue": "#005A9E",
+            "metadata": {
+                "description": "Primary brand color for Kibana theme"
+            }
+        },
+        "setupScriptUrl": {
+            "type": "string",
+            "defaultValue": "https://raw.githubusercontent.com/h4l0gen/ARM---Infra-deployment/refs/heads/main/linked-templates/container_script.sh",
+            "metadata": {
+                "description": "URL to the setup script"
+            }
+        },
+        "kibanaSystemPassword": {
+            "type": "securestring",
+            "metadata": {
+                "description": "Password for the kibana_system user"
+            }
+        }
+    },
+    "variables": {
+        "logAnalyticsWorkspaceName": "[concat('logs-', parameters('environmentName'))]",
+        "appInsightsName": "[concat('appins-', parameters('environmentName'))]",
+        "elasticVersion": "8.18.4",
+        "deploymentScriptName": "[concat(parameters('environmentName'), '-setup')]",
+        "userAssignedIdentityName": "[concat(parameters('environmentName'), '-identity')]",
+        "roleAssignmentName": "[guid(concat(resourceGroup().id, 'contributor', variables('userAssignedIdentityName')))]",        
+        "contributorRoleDefinitionId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', 'b24988ac-6180-42a0-ab88-20f7382dd24c')]",
+        "storageAccountName": "[concat('elastic', uniqueString(resourceGroup().id))]",
+        "fileShareName": "elasticdata"
+    },
+    "resources": [
+        {
+            "type": "Microsoft.Storage/storageAccounts",
+            "apiVersion": "2023-01-01",
+            "name": "[variables('storageAccountName')]",
+            "location": "[parameters('location')]",
+            "sku": {
+                "name": "Standard_LRS"
+            },
+            "kind": "StorageV2",
+            "properties": {
+                "accessTier": "Hot",
+                "supportsHttpsTrafficOnly": true,
+                "minimumTlsVersion": "TLS1_2"
+            }
+        },
+        {
+            "type": "Microsoft.Storage/storageAccounts/fileServices",
+            "apiVersion": "2023-01-01",
+            "name": "[concat(variables('storageAccountName'), '/default')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName'))]"
+            ]
+        },
+        {
+            "type": "Microsoft.Storage/storageAccounts/fileServices/shares",
+            "apiVersion": "2023-01-01",
+            "name": "[concat(variables('storageAccountName'), '/default/', variables('fileShareName'))]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Storage/storageAccounts/fileServices', variables('storageAccountName'), 'default')]"
+            ],
+            "properties": {
+                "shareQuota": 100
+            }
+        },
+        {
+            "type": "Microsoft.OperationalInsights/workspaces",
+            "apiVersion": "2022-10-01",
+            "name": "[variables('logAnalyticsWorkspaceName')]",
+            "location": "[parameters('location')]",
+            "properties": {
+                "sku": {
+                    "name": "PerGB2018"
+                },
+                "retentionInDays": 30
+            }
+        },
+        {
+            "type": "Microsoft.Insights/components",
+            "apiVersion": "2020-02-02",
+            "name": "[variables('appInsightsName')]",
+            "location": "[parameters('location')]",
+            "kind": "web",
+            "properties": {
+                "Application_Type": "web",
+                "WorkspaceResourceId": "[resourceId('Microsoft.OperationalInsights/workspaces', variables('logAnalyticsWorkspaceName'))]"
+            },
+            "dependsOn": [
+                "[resourceId('Microsoft.OperationalInsights/workspaces', variables('logAnalyticsWorkspaceName'))]"
+            ]
+        },
+        {
+            "type": "Microsoft.App/managedEnvironments",
+            "apiVersion": "2023-05-01",
+            "name": "[parameters('environmentName')]",
+            "location": "[parameters('location')]",
+            "properties": {
+                "appLogsConfiguration": {
+                    "destination": "log-analytics",
+                    "logAnalyticsConfiguration": {
+                        "customerId": "[reference(resourceId('Microsoft.OperationalInsights/workspaces', variables('logAnalyticsWorkspaceName'))).customerId]",
+                        "sharedKey": "[listKeys(resourceId('Microsoft.OperationalInsights/workspaces', variables('logAnalyticsWorkspaceName')), '2022-10-01').primarySharedKey]"
+                    }
+                }
+            },
+            "dependsOn": [
+                "[resourceId('Microsoft.OperationalInsights/workspaces', variables('logAnalyticsWorkspaceName'))]"
+            ]
+        },
+        {
+            "type": "Microsoft.App/managedEnvironments/storages",
+            "apiVersion": "2023-05-01",
+            "name": "[concat(parameters('environmentName'), '/', variables('fileShareName'))]",
+            "properties": {
+                "azureFile": {
+                    "accountName": "[variables('storageAccountName')]",
+                    "accountKey": "[listKeys(resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName')), '2023-01-01').keys[0].value]",
+                    "shareName": "[variables('fileShareName')]",
+                    "accessMode": "ReadWrite"
+                }
+            },
+            "dependsOn": [
+                "[resourceId('Microsoft.App/managedEnvironments', parameters('environmentName'))]",
+                "[resourceId('Microsoft.Storage/storageAccounts/fileServices/shares', variables('storageAccountName'), 'default', variables('fileShareName'))]"
+            ]
+        },
+        {
+            "type": "Microsoft.App/containerApps",
+            "apiVersion": "2024-03-01",
+            "name": "[parameters('elasticsearchName')]",
+            "location": "[parameters('location')]",
+            "properties": {
+                "managedEnvironmentId": "[resourceId('Microsoft.App/managedEnvironments', parameters('environmentName'))]",
+                "configuration": {
+                    "ingress": {
+                        "external": true,
+                        "targetPort": 9200,
+                        "transport": "http"
+                    },
+                    "secrets": [
+                        {
+                            "name": "elastic-password",
+                            "value": "[parameters('elasticPassword')]"
+                        }
+                    ]
+                },
+                "template": {
+                    "containers": [
+                        {
+                            "image": "[concat('docker.elastic.co/elasticsearch/elasticsearch:', variables('elasticVersion'))]",
+                            "name": "elasticsearch",
+                            "resources": {
+                                "cpu": 2,
+                                "memory": "4Gi"
+                            },
+                            "env": [
+                                {
+                                    "name": "ELASTIC_PASSWORD",
+                                    "secretRef": "elastic-password"
+                                },
+                                {
+                                    "name": "discovery.type",
+                                    "value": "single-node"
+                                },
+                                {
+                                    "name": "xpack.security.enabled",
+                                    "value": "false"
+                                },
+                                {
+                                    "name": "xpack.security.http.ssl.enabled",
+                                    "value": "false"
+                                },
+                                {
+                                    "name": "ES_JAVA_OPTS",
+                                    "value": "-Xms2g -Xmx2g"
+                                }
+                            ],
+                            "volumeMounts": [
+                                {
+                                    "volumeName": "elasticsearch-data",
+                                    "mountPath": "/usr/share/elasticsearch/data"
+                                }
+                            ]
+                        }
+                    ],
+                    "scale": {
+                        "minReplicas": 1,
+                        "maxReplicas": 1
+                    },
+                    "volumes": [
+                        {
+                            "name": "elasticsearch-data",
+                            "storageType": "AzureFile",
+                            "storageName": "[variables('fileShareName')]"
+                        }
+                    ]
+                }
+            },
+            "dependsOn": [
+                "[resourceId('Microsoft.App/managedEnvironments/storages', parameters('environmentName'), variables('fileShareName'))]"
+            ]
+        },
+        {
+            "type": "Microsoft.App/containerApps",
+            "apiVersion": "2024-03-01",
+            "name": "[parameters('kibanaName')]",
+            "location": "[parameters('location')]",
+            "properties": {
+                "managedEnvironmentId": "[resourceId('Microsoft.App/managedEnvironments', parameters('environmentName'))]",
+                "configuration": {
+                    "ingress": {
+                        "external": true,
+                        "targetPort": 5601,
+                        "transport": "http",
+                        "traffic": [
+                            {
+                                "weight": 100,
+                                "latestRevision": true
+                            }
+                        ]
+                    },
+                    "secrets": [
+                        {
+                            "name": "kibana-system-password",
+                            "value": "[parameters('kibanaSystemPassword')]"
+                        }
+                    ]
+                },
+                "template": {
+                    "containers": [
+                        {
+                            "image": "[concat('docker.elastic.co/kibana/kibana:', variables('elasticVersion'))]",
+                            "name": "kibana",
+                            "resources": {
+                                "cpu": 1,
+                                "memory": "2Gi"
+                            },
+                            "env": [
+                                {
+                                    "name": "ELASTICSEARCH_HOSTS",
+                                    "value": "[concat('https://', reference(resourceId('Microsoft.App/containerApps', parameters('elasticsearchName'))).configuration.ingress.fqdn)]"
+                                },
+                                {
+                                    "name": "ELASTICSEARCH_USERNAME",
+                                    "value": "kibana_system"
+                                },
+                                {
+                                    "name": "ELASTICSEARCH_PASSWORD",
+                                    "secretRef": "kibana-system-password"
+                                },
+                                {
+                                    "name": "SERVER_PUBLICBASEURL",
+                                    "value": "[concat('https://', parameters('kibanaName'), '.', reference(resourceId('Microsoft.App/managedEnvironments', parameters('environmentName'))).defaultDomain)]"
+                                },
+                                {
+                                    "name": "XPACK_ENCRYPTEDSAVEDOBJECTS_ENCRYPTIONKEY",
+                                    "value": "min32characterslongencryptionkey123"
+                                }
+                            ]
+                        }
+                    ],
+                    "scale": {
+                        "minReplicas": 1,
+                        "maxReplicas": 1
+                    }
+                }
+            },
+            "dependsOn": [
+                "[resourceId('Microsoft.App/containerApps', parameters('elasticsearchName'))]"
+            ]
+        }
+        // {
+        //     "type": "Microsoft.ManagedIdentity/userAssignedIdentities",
+        //     "apiVersion": "2018-11-30",
+        //     "name": "[variables('userAssignedIdentityName')]",
+        //     "location": "[parameters('location')]"
+        // },
+        // {
+        //     "type": "Micro[parameters('location')]"
+        // },
+        // {
+        //     "type": "Microsoft.Authorization/roleAssignments",
+        //     "apiVersion": "2022-04-01",
+        //     "name": "[variables('roleAssignmentName')]",
+        //     "dependsOn": [
+        //         "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', variables('userAssignedIdentityName'))]"
+        //     ],
+        //     "properties": {
+        //         "roleDefinitionId": "[variables('contributorRoleDefinitionId')]",
+        //         "principalId": "[reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', variables('userAssignedIdentityName')), '2018-11-30').principalId]",
+        //         "principalType": "ServicePrincipal"
+        //     }
+        // },
+        // {
+        //     "type": "Microsoft.Resources/deploymentScripts",
+        //     "apiVersion": "2020-10-01",
+        //     "name": "[variables('deploymentScriptName')]",
+        //     "location": "[parameters('location')]",
+        //     "kind": "AzureCLI",
+        //     "identity": {
+        //         "type": "UserAssigned",
+        //         "userAssignedIdentities": {
+        //             "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', variables('userAssignedIdentityName'))]": {}
+        //         }
+        //     },
+        //     "dependsOn": [
+        //         "[resourceId('Microsoft.App/containerApps', parameters('kibanaName'))]",
+        //         "[resourceId('Microsoft.Authorization/roleAssignments', variables('roleAssignmentName'))]"
+        //     ],
+        //     "properties": {
+        //         "azCliVersion": "2.26.1",
+        //         "timeout": "PT45M",
+        //         "retentionInterval": "P1D",
+        //         "environmentVariables": [
+        //             {
+        //                 "name": "ELASTICSEARCH_NAME",
+        //                 "value": "[parameters('elasticsearchName')]"
+        //             },
+        //             {
+        //                 "name": "KIBANA_NAME",
+        //                 "value": "[parameters('kibanaName')]"
+        //             },
+        //             {
+        //                 "name": "RESOURCE_GROUP",
+        //                 "value": "[resourceGroup().name]"
+        //             },
+        //             {
+        //                 "name": "ELASTIC_PASSWORD",
+        //                 "secureValue": "[parameters('elasticPassword')]"
+        //             },
+        //             {
+        //                 "name": "COMPANY_NAME",
+        //                 "value": "[parameters('companyName')]"
+        //             },
+        //             {
+        //                 "name": "COMPANY_LOGO",
+        //                 "value": "[parameters('companyLogo')]"
+        //             },
+        //             {
+        //                 "name": "PRIMARY_COLOR",
+        //                 "value": "[parameters('primaryColor')]"
+        //             },
+        //             {
+        //                 "name": "SETUP_SCRIPT_URL",
+        //                 "value": "[parameters('setupScriptUrl')]"
+        //             },
+        //             {
+        //                 "name": "KIBANA_SYSTEM_PASSWORD",
+        //                 "value": "[parameters('kibanaSystemPassword')]"
+        //             }                    
+        //         ],
+        //         "primaryScriptUri": "[parameters('setupScriptUrl')]",
+        //         "cleanupPreference": "OnExpiration"
+        //     }
+        // }
+    ],
+    "outputs": {
+        "kibanaUrl": {
+            "type": "string",
+            "value": "[concat('https://', parameters('kibanaName'), '.', reference(resourceId('Microsoft.App/managedEnvironments', parameters('environmentName'))).defaultDomain)]"
+        },
+        "elasticsearchUrl": {
+            "type": "string",
+            "value": "[concat('https://', reference(resourceId('Microsoft.App/containerApps', parameters('elasticsearchName'))).configuration.ingress.fqdn)]"
+        },
+        "elasticPassword": {
+            "type": "securestring",
+            "value": "[parameters('elasticPassword')]"
+        },
+        "storageAccountName": {
+            "type": "string",
+            "value": "[variables('storageAccountName')]"
+        }
+    }
+}
