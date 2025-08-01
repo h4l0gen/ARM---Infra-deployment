@@ -6,19 +6,29 @@ KIBANA_URL="$KIBANA_NAME"
 echo "$ELASTIC_URL"
 echo "$KIBANA_URL"
 
-echo "Testing connection to Kibana..."
-# Test connection first
-RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" -X GET "$KIBANA_URL/api/status" \
-    -H "kbn-xsrf: true")
-
-if [ "$RESPONSE" -ne "200" ]; then
-    echo "Failed to connect. HTTP Status: $RESPONSE"
-    echo "Please check your password and try again"
-    exit 1
-fi
+# Wait for Kibana to be ready
+echo "Waiting for Kibana to be ready..."
+for i in {1..30}; do
+    RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" -X GET "$KIBANA_URL/api/status" -H "kbn-xsrf: true")
+    
+    if [ "$RESPONSE" -eq "200" ]; then
+        echo "Kibana is ready!"
+        break
+    elif [ "$RESPONSE" -eq "503" ]; then
+        echo "Kibana is starting... ($i/30)"
+    else
+        echo "Unexpected response: $RESPONSE ($i/30)"
+    fi
+    
+    if [ $i -eq 30 ]; then
+        echo "Kibana failed to become ready after 5 minutes"
+        exit 1
+    fi
+    
+    sleep 10
+done
 
 echo "Connected successfully!"
-
 
 # In your deployment script
 curl -X PUT "$ELASTIC_URL/_ilm/policy/talsec_prod_policy" \
