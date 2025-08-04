@@ -8,6 +8,9 @@ KIBANA_SYSTEM_PASSWORD="$KIBANA_SYSTEM_PASSWORD"  # Pass this as secure paramete
 
 echo "$ELASTIC_URL"
 echo "$KIBANA_URL"
+echo "KIBANA_SYSTEM_PASSWORD length: ${#KIBANA_SYSTEM_PASSWORD}"
+echo "KIBANA_SYSTEM_PASSWORD exists: $([ -n "$KIBANA_SYSTEM_PASSWORD" ] && echo "YES" || echo "NO")"
+echo "$KIBANA_SYSTEM_PASSWORD"
 
 wait_for_elasticsearch() {
     echo "Waiting for Elasticsearch to be ready..."
