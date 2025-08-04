@@ -14,7 +14,7 @@ echo "$KIBANA_SYSTEM_PASSWORD"
 
 wait_for_elasticsearch() {
     echo "Waiting for Elasticsearch to be ready..."
-    for i in {1..30}; do
+    for i in {1..18}; do
         RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" -u "$ELASTIC_USER:$ELASTIC_PASSWORD" "$ELASTIC_URL")
         
         if [ "$RESPONSE" -eq "200" ]; then
@@ -24,7 +24,7 @@ wait_for_elasticsearch() {
             echo "Elasticsearch is ready but authentication failed - check credentials"
             exit 1
         else
-            echo "Waiting for Elasticsearch... ($i/30) Response: $RESPONSE"
+            echo "Waiting for Elasticsearch... ($i/18) Response: $RESPONSE"
         fi
         
         sleep 10
@@ -35,23 +35,23 @@ wait_for_elasticsearch() {
 
 wait_for_kibana() {
     echo "Waiting for Kibana to be ready..."
-    for i in {1..30}; do
+    for i in {1..18}; do  # Changed from 30 to 18 iterations (18 * 10s = 180s = 3 minutes)
         RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" -X GET "$KIBANA_URL/api/status" -H "kbn-xsrf: true" -u "$ELASTIC_USER:$ELASTIC_PASSWORD")
         
         if [ "$RESPONSE" -eq "200" ]; then
             echo "Kibana is ready!"
             return 0
         elif [ "$RESPONSE" -eq "503" ]; then
-            echo "Kibana is starting... ($i/30)"
+            echo "Kibana is starting... ($i/18)"  # Updated denominator
         elif [ "$RESPONSE" -eq "401" ]; then
             echo "Kibana authentication failed - check credentials"
             exit 1
         else
-            echo "Unexpected response: $RESPONSE ($i/30)"
+            echo "Unexpected response: $RESPONSE ($i/18)"  # Updated denominator
         fi
         
-        if [ $i -eq 30 ]; then
-            echo "Kibana failed to become ready after 5 minutes"
+        if [ $i -eq 18 ]; then  # Changed from 30 to 18
+            echo "Kibana failed to become ready after 3 minutes"  # Updated timeout message
             exit 1
         fi
         
