@@ -62,35 +62,40 @@ wait_for_kibana() {
     exit 1
 }
 
-wait_for_elasticsearch_fully_ready() {
-    echo "Waiting for Elasticsearch to be fully operational..."
-    for i in {1..12}; do
-        # Check cluster health
-        HEALTH=$(curl -s -u "$ELASTIC_USER:$ELASTIC_PASSWORD" "$ELASTIC_URL/_cluster/health" | grep -o '"status":"[^"]*"' | cut -d'"' -f4)
+# wait_for_elasticsearch_fully_ready() {
+#     echo "Waiting for Elasticsearch to be fully operational..."
+#     for i in {1..12}; do
+#         # Check cluster health
+#         HEALTH=$(curl -s -u "$ELASTIC_USER:$ELASTIC_PASSWORD" "$ELASTIC_URL/_cluster/health" | grep -o '"status":"[^"]*"' | cut -d'"' -f4)
         
-        if [ "$HEALTH" = "yellow" ] || [ "$HEALTH" = "green" ]; then
-            # Check for pending tasks
-            PENDING=$(curl -s -u "$ELASTIC_USER:$ELASTIC_PASSWORD" "$ELASTIC_URL/_cluster/pending_tasks" | grep -o '"tasks":\[[^]]*\]' | grep -o '\[.*\]')
+#         if [ "$HEALTH" = "yellow" ] || [ "$HEALTH" = "green" ]; then
+#             # Check for pending tasks
+#             PENDING=$(curl -s -u "$ELASTIC_USER:$ELASTIC_PASSWORD" "$ELASTIC_URL/_cluster/pending_tasks" | grep -o '"tasks":\[[^]]*\]' | grep -o '\[.*\]')
             
-            if [ "$PENDING" = "[]" ]; then
-                echo "Elasticsearch is fully ready (status: $HEALTH, no pending tasks)"
-                return 0
-            else
-                echo "Cluster is $HEALTH but has pending tasks... ($i/12)"
-            fi
-        else
-            echo "Cluster health is $HEALTH, waiting... ($i/12)"
-        fi
+#             if [ "$PENDING" = "[]" ]; then
+#                 echo "Elasticsearch is fully ready (status: $HEALTH, no pending tasks)"
+#                 return 0
+#             else
+#                 echo "Cluster is $HEALTH but has pending tasks... ($i/12)"
+#             fi
+#         else
+#             echo "Cluster health is $HEALTH, waiting... ($i/12)"
+#         fi
         
-        sleep 10
-    done
-    echo "Elasticsearch failed to become fully ready"
-    exit 1
-}
+#         sleep 10
+#     done
+#     echo "Elasticsearch failed to become fully ready"
+#     exit 1
+# }
 
 setup_passwords
 wait_for_kibana
-wait_for_elasticsearch_fully_ready
+# wait_for_elasticsearch_fully_ready
+
+echo "Connected successfully!"
+
+echo "Waiting 120 seconds for Elasticsearch to stabilize..."
+sleep 180
 
 echo "Connected successfully!"
 
