@@ -12,79 +12,57 @@ echo "KIBANA_SYSTEM_PASSWORD length: ${#KIBANA_SYSTEM_PASSWORD}"
 echo "KIBANA_SYSTEM_PASSWORD exists: $([ -n "$KIBANA_SYSTEM_PASSWORD" ] && echo "YES" || echo "NO")"
 echo "$KIBANA_SYSTEM_PASSWORD"
 
-wait_for_elasticsearch() {
-    echo "Waiting for Elasticsearch to be ready..."
-    for i in {1..18}; do
-        RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" -u "$ELASTIC_USER:$ELASTIC_PASSWORD" "$ELASTIC_URL")
-        
-        if [ "$RESPONSE" -eq "200" ]; then
-            echo "Elasticsearch is ready and authenticated!"
-            return 0
-        elif [ "$RESPONSE" -eq "401" ]; then
-            echo "Elasticsearch is ready but authentication failed - check credentials"
-            exit 1
-        else
-            echo "Waiting for Elasticsearch... ($i/18) Response: $RESPONSE"
-        fi
-        
-        sleep 10
-    done
-    echo "Elasticsearch failed to become ready after 5 minutes"
-    exit 1
+setup_passwords() {
+    echo "Setting up kibana_system password..."
+    
+    # Set the kibana_system password
+    KIBANA_SET_RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" -X POST \
+        -u "$ELASTIC_USER:$ELASTIC_PASSWORD" \
+        "$ELASTIC_URL/_security/user/kibana_system/_password" \
+        -H "Content-Type: application/json" \
+        -d "{\"password\":\"$KIBANA_SYSTEM_PASSWORD\"}")
+    
+    if [ "$KIBANA_SET_RESPONSE" -eq "200" ]; then
+        echo "Successfully set kibana_system password"
+    else
+        echo "Failed to set kibana_system password. Response: $KIBANA_SET_RESPONSE"
+        exit 1
+    fi
+    
+    # Verify kibana_system can authenticate
+    VERIFY_RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" \
+        -u "kibana_system:$KIBANA_SYSTEM_PASSWORD" \
+        "$ELASTIC_URL/_security/_authenticate")
+    
+    if [ "$VERIFY_RESPONSE" -eq "200" ]; then
+        echo "kibana_system user successfully authenticated"
+    else
+        echo "kibana_system authentication failed. Response: $VERIFY_RESPONSE"
+        exit 1
+    fi
 }
 
 wait_for_kibana() {
     echo "Waiting for Kibana to be ready..."
-    for i in {1..18}; do  # Changed from 30 to 18 iterations (18 * 10s = 180s = 3 minutes)
+    for i in {1..18}; do
         RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" -X GET "$KIBANA_URL/api/status" -H "kbn-xsrf: true" -u "$ELASTIC_USER:$ELASTIC_PASSWORD")
         
         if [ "$RESPONSE" -eq "200" ]; then
             echo "Kibana is ready!"
             return 0
         elif [ "$RESPONSE" -eq "503" ]; then
-            echo "Kibana is starting... ($i/18)"  # Updated denominator
-        elif [ "$RESPONSE" -eq "401" ]; then
-            echo "Kibana authentication failed - check credentials"
-            exit 1
+            echo "Kibana is starting... ($i/18)"
         else
-            echo "Unexpected response: $RESPONSE ($i/18)"  # Updated denominator
-        fi
-        
-        if [ $i -eq 18 ]; then  # Changed from 30 to 18
-            echo "Kibana failed to become ready after 3 minutes"  # Updated timeout message
-            exit 1
+            echo "Unexpected response: $RESPONSE ($i/18)"
         fi
         
         sleep 10
     done
+    echo "Kibana failed to become ready after 3 minutes"
+    exit 1
 }
 
-# Function to setup passwords if not already configured
-setup_passwords() {
-    echo "Checking if passwords need to be configured..."
-    RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" -u "$ELASTIC_USER:$ELASTIC_PASSWORD" "$ELASTIC_URL/_security/_authenticate")
-    
-    if [ "$RESPONSE" -eq "200" ]; then
-        echo "Passwords are already configured"
-    else
-        echo "Configuring built-in users passwords..."
-        # This would only work if security is enabled but default passwords are still set
-        curl -X POST -u "elastic:changeme" "$ELASTIC_URL/_security/user/elastic/_password" \
-            -H "Content-Type: application/json" \
-            -d "{\"password\":\"$ELASTIC_PASSWORD\"}" || echo "Password change may have failed"
-        
-        curl -X POST -u "elastic:$ELASTIC_PASSWORD" "$ELASTIC_URL/_security/user/kibana_system/_password" \
-            -H "Content-Type: application/json" \
-            -d "{\"password\":\"$KIBANA_SYSTEM_PASSWORD\"}" || echo "Kibana user password change may have failed"
-    fi
-}
-
-# Main execution flow
-wait_for_elasticsearch
-
-echo "setting up password"
 setup_passwords
-echo "now waiting for kibana"
 wait_for_kibana
 
 echo "Connected successfully!"
