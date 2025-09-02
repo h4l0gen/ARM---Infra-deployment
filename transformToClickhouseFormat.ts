@@ -1,8 +1,17 @@
 import * as fs from 'fs';
-import { createStringifyStream, createParseStream } from 'big-json';
+import { createParseStream } from 'big-json';
+import { ClickHouseClient, createClient } from '@clickhouse/client';
 
-const INPUT_FILE = 'a.json';
-const OUTPUT_FILE = 'flattened_output.json';
+const INPUT_FILE = './downloads/elasticsearch_talsec_log_dev_android_free_2021-06-10_10-02_to_2023-06-05_10-08.json';   //file downloaded from GCS
+
+const CLICKHOUSE_CONFIG = {
+  url: '<>',
+  username: '<>',
+  password: '<>',
+  database: '<>',
+};
+const TABLE_NAME = '<>';
+const BATCH_SIZE = 1000;
 
 interface EnhancedMergedLog {
   [key: string]: any;
@@ -195,58 +204,49 @@ function transformToClickhouseFormat(document: EnhancedMergedLog): any {
   };
 }
 
-async function flattenFile() {
+// Due to big data we are changing data as per clickhouse and sending at same time. 
+async function flattenAndInsertDirectly() {
+  const client: ClickHouseClient = createClient(CLICKHOUSE_CONFIG);
   try {
     const readStream = fs.createReadStream(INPUT_FILE);
     const parseStream = createParseStream();
 
-    const outputStream = fs.createWriteStream(OUTPUT_FILE);
-    outputStream.write('[');
+    let batch: any[] = [];
+    let totalInserted = 0;
 
-    let first = true;
-    let count = 0;
+    parseStream.on('data', async (data: unknown) => {
+      const logs = Array.isArray(data) ? data : [data];
+      for (const log of logs) {
+        const transformed = transformToClickhouseFormat(log);
+        batch.push(transformed);
 
-    parseStream.on('data', (data) => {
-      if (Array.isArray(data)) {
-        data.forEach((log: EnhancedMergedLog) => {
-          const transformed = transformToClickhouseFormat(log);
-          if (!first) {
-            outputStream.write(',');
-          }
-          outputStream.write(JSON.stringify(transformed));
-          first = false;
-          count++;
-        });
-      } else {
-        // If not an array, treat as single object
-        const transformed = transformToClickhouseFormat(data);
-        if (!first) {
-          outputStream.write(',');
+        if (batch.length >= BATCH_SIZE) {
+          await client.insert({ table: TABLE_NAME, values: batch, format: 'JSONEachRow' });
+          totalInserted += batch.length;
+          console.log(`Inserted batch of ${batch.length} (total: ${totalInserted})`);
+          batch = [];
         }
-        outputStream.write(JSON.stringify(transformed));
-        first = false;
-        count++;
       }
     });
 
-    parseStream.on('end', () => {
-      outputStream.write(']');
-      outputStream.end();
-      console.log(`Flattened data written to ${OUTPUT_FILE}. Processed ${count} records.`);
+    parseStream.on('end', async () => {
+      if (batch.length > 0) {
+        await client.insert({ table: TABLE_NAME, values: batch, format: 'JSONEachRow' });
+        totalInserted += batch.length;
+        console.log(`Final batch inserted (total: ${totalInserted})`);
+      }
+      console.log('Processing complete');
     });
 
-    parseStream.on('error', (err) => {
-      console.error('Parsing error:', err.message);
-    });
+    parseStream.on('error', (err: Error) => console.error('Parsing error:', err.message));
 
     readStream.pipe(parseStream);
   } catch (error) {
     if (error instanceof Error) {
-      console.error('Error:', error.message);
+      console.error("Error:", error.message);
     } else {
-      console.error('Unexpected error:', error);
+      console.error("Unexpected error:", error);
     }
   }
 }
-
-flattenFile();
+flattenAndInsertDirectly();
